@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using Newtonsoft.Json;
-using Xunit;
 
 namespace Test
 {
@@ -27,35 +26,22 @@ namespace Test
         public const short COREVERVION = 1;
 
         public const int CONFIRM_PACK_SIZE = 12;
+        public const int MAX_CONFIRM_PACK_SIZE = 20;
 
+        public static readonly byte[] ConfirmationPackBytes = { 0xC0, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0xFB, 0xA5, 0xB8, 0x85, 0xC1 };
 
-        private void DeleteConfirmPacket(List<byte> data)
+        public static int IndexOfConfirmationPack(byte[] data, int bytesRead)
         {
-            int endIndex = data.IndexOf(END);
-            data.RemoveRange(0, endIndex + 1);
+            return data.IndexOf(START) ;
         }
 
-        private void DeleteExcessBytes(List<byte> data)
+        private static void DeleteExcessBytes(List<byte> data)
         {
             int end = data.IndexOf(END) + 1;
             data.RemoveRange(end, data.Count - end);
         }
 
-        public string ParceReceivedPacket(List<byte> data)
-        {
-            DeleteConfirmPacket(data);
-            DeleteExcessBytes(data);
-            var packet = BackChangeBytes(data);
-
-            if (!Crc.IsEqualCheckSum(packet))
-                throw new PacketParceException("crc eror");
-            int startIndex = sizeof(uint) + sizeof(short);
-            int length = packet.Count - startIndex;
-            var res = packet.GetRange(startIndex, length);
-            return Encoding.UTF8.GetString(res.ToArray());
-        }
-
-        List<byte> BackChangeBytes(List<byte> data)
+        static List<byte> BackChangeBytes(List<byte> data)
         {
             int index = 1;
             var res = new List<byte>();;
@@ -81,29 +67,7 @@ namespace Test
             return res;
         }
 
-        public byte[] MakeSendPacket(string json)
-        {
-            var res = new List<byte>();
-
-            res.AddRange(BitConverter.GetBytes(COREVERVION).Reverse());
-            res.AddRange(BitConverter.GetBytes(REQEST_ID).Reverse());
-
-            var jsonBytes = Encoding.UTF8.GetBytes(json);
-            res.AddRange(jsonBytes);
-
-            uint crc = Crc.GetCrc(res);
-            var crcBytes = BitConverter.GetBytes(crc).Reverse();
-            res.AddRange(crcBytes);
-
-            FowardChangeBytes(res);
-
-            res.Insert(0, START);
-            res.Add(END);
-
-            return res.ToArray();
-        }
-
-        void FowardChangeBytes(List<byte> data)
+        static void FowardChangeBytes(List<byte> data)
         {
             int index = 0;
             int length = data.Count;
@@ -133,6 +97,64 @@ namespace Test
                 }
                 index++;
             }
+        }
+
+        public static byte[] MakeSendPacket(string json)
+        {
+            var res = new List<byte>();
+
+            res.AddRange(BitConverter.GetBytes(COREVERVION).Reverse());
+            res.AddRange(BitConverter.GetBytes(REQEST_ID).Reverse());
+
+            var jsonBytes = Encoding.UTF8.GetBytes(json);
+            res.AddRange(jsonBytes);
+
+            uint crc = Crc.GetCrc(res);
+            var crcBytes = BitConverter.GetBytes(crc).Reverse();
+            res.AddRange(crcBytes);
+
+            FowardChangeBytes(res);
+
+            res.Insert(0, START);
+            res.Add(END);
+
+            return res.ToArray();
+        }
+
+        /// <summary>
+        /// Делит полученные данные на пакеты
+        /// </summary>
+        /// <param name="data">Полученные данные</param>
+        /// <returns>Пакеты</returns>
+        public static List<List<byte>> SplitToPackets(List<byte> data)
+        {
+            var res = new List<List<byte>>();
+            int startIndex = -1;
+            for (int i = 0, max = data.Count; i < max; i++)
+            {
+                var b = data[i];
+                if (b == START) startIndex = i;
+                else if (startIndex != -1 && b == END)
+                {
+                    int counts = i + 1 - startIndex; 
+                    if (counts >= CONFIRM_PACK_SIZE)
+                        res.Add(data.GetRange(startIndex, i + 1 - startIndex));
+                    startIndex = -1;
+                } 
+            }
+            return res;
+        }
+
+        public static string ParceReceivedPacket(List<byte> data)
+        {
+            DeleteExcessBytes(data);
+            var packet = BackChangeBytes(data);
+            if (!Crc.IsEqualCheckSum(packet))
+                throw new PacketParceException("crc eror");
+            int startIndex = sizeof(uint) + sizeof(short);
+            int length = packet.Count - startIndex;
+            var res = packet.GetRange(startIndex, length);
+            return Encoding.UTF8.GetString(res.ToArray());
         }
 
     }

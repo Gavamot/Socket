@@ -18,7 +18,6 @@ namespace Test
 
         static void Main(string[] args)
         {
-            //IstWork();
             var client = new AsynchronousClient();
             client.StartClient();
             Console.ReadKey();
@@ -34,10 +33,9 @@ namespace Test
             client.Connect(endPoint);
 
             NetworkStream tcpStream = client.GetStream();
-            var msg = Message.GetAuthorizeMessage();
+            var msg = Message.CreateAuthorizeMessage();
             var msgJson = JsonConvert.SerializeObject(msg);
-            var pacet = new Packet();
-            var data = pacet.MakeSendPacket(msgJson);
+            var data = Packet.MakeSendPacket(msgJson);
 
             int sendLength = data.Length;
             tcpStream.Write(data, 0, data.Length);
@@ -69,10 +67,10 @@ namespace Test
             // подключаемся к удаленному хосту
             socket.Connect(ipPoint);
 
-            var msg = Message.GetAuthorizeMessage();
+            var msg = Message.CreateAuthorizeMessage();
             var msgJson = JsonConvert.SerializeObject(msg);
             var pacet = new Packet();
-            var data = pacet.MakeSendPacket(msgJson);
+            var data = Packet.MakeSendPacket(msgJson);
 
             socket.Send(data);
             Thread.Sleep(500);
@@ -97,7 +95,7 @@ namespace Test
 
 
             //string str = BitConverter.ToString(receiveBytes.ToArray());
-            var str = pacet.ParceReceivedPacket(receiveBytes);
+            var str = Packet.ParceReceivedPacket(receiveBytes);
             Console.WriteLine(str);
 
             File.WriteAllText("123", str);

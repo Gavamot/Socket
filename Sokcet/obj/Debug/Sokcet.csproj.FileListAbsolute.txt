@@ -1,0 +1,9 @@
+D:\git_rep\sokcet_p\Sokcet\Sokcet\obj\Debug\Sokcet.csprojResolveAssemblyReference.cache
+D:\git_rep\sokcet_p\Sokcet\Sokcet\obj\Debug\Sokcet.csproj.CoreCompileInputs.cache
+D:\git_rep\sokcet_p\Sokcet\Sokcet\bin\Debug\Sokcet.exe.config
+D:\git_rep\sokcet_p\Sokcet\Sokcet\bin\Debug\Sokcet.exe
+D:\git_rep\sokcet_p\Sokcet\Sokcet\bin\Debug\Sokcet.pdb
+D:\git_rep\sokcet_p\Sokcet\Sokcet\bin\Debug\Newtonsoft.Json.dll
+D:\git_rep\sokcet_p\Sokcet\Sokcet\bin\Debug\Newtonsoft.Json.xml
+D:\git_rep\sokcet_p\Sokcet\Sokcet\obj\Debug\Sokcet.exe
+D:\git_rep\sokcet_p\Sokcet\Sokcet\obj\Debug\Sokcet.pdb
