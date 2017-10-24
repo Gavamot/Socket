@@ -33,7 +33,7 @@ namespace Test
                 Operation = (int)EASCOperation.eNoAccessOperation,
                 Parameters = new Dictionary<int, string>
                 {
-                    {0, "Admin"}, // Login - Admin
+                    {0, "web"}, // Login - Admin
                     {1, "Nz����"}, // Password - Admin
                 },
                 RootObject = true,
@@ -46,7 +46,7 @@ namespace Test
             {
                 ClassID = 2,
                 ClassName = "CASCMessage",
-                MessageType = 29,
+                MessageType = GetMessageType(EASCMessagePath.eOnlyFoward, EASCMessage.eWebGetBrigadesInfo),
                 ObjectGuid = new Guid("4c6498c7-ebb1-4249-b9c9-7cc28d01dc91"),
                 Operation = 20,
                 Parameters = new Dictionary<int, string>

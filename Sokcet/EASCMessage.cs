@@ -210,10 +210,14 @@ namespace Test
         /// <summary>
         /// сообщение - загрузить данные asc3 ( Клиент --> Сервер )
         /// </summary>
-        eLoadDataAsc3Message = 50,                    
+        eLoadDataAsc3Message = 50,     
         /// <summary>
         /// сообщение - инициированна выдача медиа-файла ( Сервер --> Клиент )
         /// </summary>
-        eGetMediaFileInitMessage = 51           
+        eGetMediaFileInitMessage = 51,
+        /// <summary>
+        /// сообщение - получить информацию по бригадам ( Сервер --> Клиент )
+        /// </summary>
+        eWebGetBrigadesInfo = 100
     }
 }

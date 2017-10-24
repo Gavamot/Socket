@@ -39,15 +39,12 @@ namespace Test
 
             int sendLength = data.Length;
             tcpStream.Write(data, 0, data.Length);
-            Thread.Sleep(1000);
 
             byte[] bytes = new byte[client.ReceiveBufferSize];
             int bytesRead = tcpStream.Read(bytes, 0, client.ReceiveBufferSize);
 
             byte[] res = new byte[bytesRead];
             Array.Copy(bytes, 12, res, 0, bytesRead - 12);
-          
-
 
             // Строка, содержащая ответ от сервера
             string returnData = Encoding.UTF8.GetString(res);
@@ -73,8 +70,6 @@ namespace Test
             var data = Packet.MakeSendPacket(msgJson);
 
             socket.Send(data);
-            Thread.Sleep(500);
-
             // получаем ответ
            
             var receiveBytes = new List<byte>();
@@ -114,49 +109,6 @@ namespace Test
             }
             while (socket.Available > 0);
         }
-
-        
-
-
-        // var msg = Message.GetFakeObject();
-        // string msgJson = JsonConvert.SerializeObject(msg);
-
-        // Littel endian
-        //var str = File.ReadAllText("./json.txt", Encoding.UTF8);
-
-        //byte[] msgBytes = Encoding.UTF8.GetBytes(str);
-
-        // string hex = BitConverter.ToString(msgBytes);
-        //Console.WriteLine(hex);
-
-        //Console.WriteLine(str);
-
-        //var webSocketOptions = new WebSocketOptions()
-        //{
-        //    KeepAliveInterval = TimeSpan.FromSeconds(120),
-        //    ReceiveBufferSize = 4 * 1024
-        //};
-        //app.UseWebSockets(webSocketOptions);
-        //Console.ReadKey();
-
-        //var ba = new byte[5];
-        //ba[0] = 0x3c;
-        //ba[1] = 0xb8;
-        //ba[2] = 0x64;
-        //ba[3] = 0x18;
-        //ba[4] = 0xca;
-
-        //var res = Crc.GetCrc(ba);
-
-        //var message = Message.GetAuthorizeMessage();
-        //var messageJson = JsonConvert.SerializeObject(message);
-        //var res = Encoding.UTF8.GetBytes(messageJson);
-        //File.WriteAllText("test.txt", BitConverter.ToString(res));
-
-        //var str = BitConverter.ToString(res);
-        //byte[] bytesA = str.Split('-')
-        //    .Select(x => byte.Parse(x, NumberStyles.HexNumber))
-        //    .ToArray();
 
     }
 }
