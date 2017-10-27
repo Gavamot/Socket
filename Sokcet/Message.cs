@@ -17,6 +17,7 @@ namespace Test
         public Dictionary<int, string> Parameters { get; set; } = new Dictionary<int, string>();
         public bool RootObject { get; set; }
         public string Data { get; set; }
+
         public static int GetMessageType(EASCMessagePath mp, EASCMessage mt)
         {
             return (int)mp | (int)mt;
@@ -40,7 +41,7 @@ namespace Test
             };
         }
 
-        public static Message CreateGiveIve50ArchiveCodesInfoMessage(uint reqvestId)
+        public static Message CreateGiveIve50ArchiveCodesInfoMessage(AsynchronousClient client)
         {
             return new Message
             {
@@ -51,7 +52,7 @@ namespace Test
                 Operation = 20,
                 Parameters = new Dictionary<int, string>
                 {
-                    {0, reqvestId.ToString()},
+                    {0, client.MessageQueueIndex.ToString()},
                     {1, QDate.GetString(new DateTime(2017, 10, 18))},
                     {2, QDate.GetString(new DateTime(2017, 10, 19))}
                 },

@@ -29,6 +29,15 @@ namespace Test
         public const byte START = 0xC0;
         public const byte END = 0xC1;
 
+        private uint _messageQueueIndex;
+
+        public uint MessageQueueIndex
+        {
+            get => _messageQueueIndex++;
+            protected set => _messageQueueIndex = value;
+        }
+
+
         private ManualResetEvent connectDone =
             new ManualResetEvent(false);
 
@@ -39,17 +48,24 @@ namespace Test
             new ManualResetEvent(false);
 
         // The response from the remote device.
-        private List<byte> response = new List<byte>();
+        private List<byte> response { get; set; }
 
-        private List<byte> Reqvest(Socket client, Message message)
+        private Socket client { get; set; }
+        private List<byte> AutorizeReceived { get; set; }
+        private IPEndPoint remoteEP { get; set; }
+
+        public List<byte> Reqvest(Message message)
         {
+            
+            if (client == null || !client.Connected)
+                throw new Exception("Соединение с сервером отсутствует");
             // Ответ на запрос
             this.response = new List<byte>();
 
             // Cбрасываем индентификаторы событий
             sendDone.Reset();
             receiveDone.Reset(); 
-
+            
             // Формируем сообщение для отправки
             var msg = new List<Message> { message };
             var msgJson = JsonConvert.SerializeObject(msg);
@@ -63,7 +79,7 @@ namespace Test
             // Получаем данные от сервера
             Receive(client);
 
-            //  Дожидаемся пока данные будут полученны
+            // Дожидаемся пока данные будут полученны
             receiveDone.WaitOne();
 
             // Если пришел только пакет с подтверждением получаем ответ на наш запрос
@@ -74,28 +90,25 @@ namespace Test
             }
 
             var packets = Packet.SplitToPackets(response);
+
             // 1 - пакет подтверждеие
             // 2 - пакет ответ на запрос
-
             // Отправляем подтверждение что получили данные
             Send(client, packets[0].ToArray());
 
             return packets[1];
         }
 
-        private Socket client;
+        public bool IsStarted => client.Connected;
 
         public AsynchronousClient()
         {
             IPAddress ipAddress = IPAddress.Parse(ip);
-            IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+            remoteEP = new IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.
             client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             client.NoDelay = true;
-            // Connect to the remote endpoint.
-            client.BeginConnect(remoteEP, new AsyncCallback(ConnectCallback), client);
-            connectDone.WaitOne();
         }
 
         public void StartClient()
@@ -103,22 +116,44 @@ namespace Test
             // Connect to a remote device.
             try
             {
-                var req = Reqvest(client, Message.CreateAuthorizeMessage());
-                string json1 = Packet.ParceReceivedPacket(req);
-
+                MessageQueueIndex = 2;
+                // Connect to the remote endpoint.
+                client.BeginConnect(remoteEP, new AsyncCallback(ConnectCallback), client);
+                connectDone.WaitOne();
+                
+                AutorizeReceived = Reqvest(Message.CreateAuthorizeMessage());
                 Console.WriteLine("Авторизационные данные полученны");
 
-                var req2 = Reqvest(client, Message.CreateGiveIve50ArchiveCodesInfoMessage(2));
-                string json2 = Packet.ParceReceivedPacket(req2);
-                Console.WriteLine("Json : {0}", json2);
-                var o = JsonConvert.DeserializeObject<Message[]>(json2);
+                //string json1 = Packet.ParceReceivedPacket(req);
+                //AutorizeReceived = Reqvest(client, Message.CreateGiveIve50ArchiveCodesInfoMessage(2));
 
-                //client.Shutdown(SocketShutdown.Both);
-                //client.Close();
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
+            }
+        }
+
+        public void RestartClient()
+        {
+            StopClient();
+            StartClient();
+        }
+
+        public void StopClient()
+        {
+            if (client != null)
+            {
+                try
+                {
+                    client.Shutdown(SocketShutdown.Both);
+                    client.Close();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    // ignored
+                }
             }
         }
 
@@ -144,8 +179,6 @@ namespace Test
         }
 
         private StateObject state;
-
-       
 
         private void Receive(Socket client)
         {
@@ -209,7 +242,6 @@ namespace Test
 
         private void Send(Socket client, byte[] byteData)
         {
-
             // Begin sending the data to the remote device.
             client.BeginSend(byteData, 0, byteData.Length, 0,
                 new AsyncCallback(SendCallback), client);
@@ -236,20 +268,11 @@ namespace Test
             }
         }
 
+
+
         public void Dispose()
         {
-            if (client != null)
-            {
-                try
-                {
-                    client.Shutdown(SocketShutdown.Both);
-                    client.Close();
-                }
-                catch (Exception e)
-                {
-                    // ignored
-                }
-            }
+            StopClient();
         }
     }
 }

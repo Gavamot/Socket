@@ -45,12 +45,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Client.cs" />
+    <Compile Include="AsynchronousClient.cs" />
     <Compile Include="EASCMessage.cs" />
     <Compile Include="EASCMessagePath.cs" />
     <Compile Include="EASCOperation.cs" />
     <Compile Include="Message.cs" />
     <Compile Include="MessageSerializer.cs" />
+    <Compile Include="ObjectPool.cs" />
     <Compile Include="Packet.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
