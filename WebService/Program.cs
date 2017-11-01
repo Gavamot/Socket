@@ -7,11 +7,13 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace WebService
 {
     public class Program
     {
+        public static ServiceProvider Provider;
         public static void Main(string[] args)
         {
             BuildWebHost(args).Run();

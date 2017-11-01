@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Test
+namespace WebService
 {
     public enum EASCMessage
     {
@@ -215,6 +215,7 @@ namespace Test
         /// сообщение - инициированна выдача медиа-файла ( Сервер --> Клиент )
         /// </summary>
         eGetMediaFileInitMessage = 51,
+
         /// <summary>
         /// сообщение - получить информацию по бригадам ( Сервер --> Клиент )
         /// </summary>

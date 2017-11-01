@@ -85,5 +85,6 @@ namespace Test
         /// удалить данные из архивов за определённую дату по бригаде(устройству)
         /// </summary>
         eDeleteDataOperation = 26
+
     };
 }

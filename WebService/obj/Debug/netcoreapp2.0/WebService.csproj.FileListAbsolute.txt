@@ -8,7 +8,4 @@ D:\git_rep\Socket\WebService\obj\Debug\netcoreapp2.0\WebService.AssemblyInfo.cs
 D:\git_rep\Socket\WebService\bin\Debug\netcoreapp2.0\WebService.pdb
 D:\git_rep\Socket\WebService\obj\Debug\netcoreapp2.0\WebService.dll
 D:\git_rep\Socket\WebService\obj\Debug\netcoreapp2.0\WebService.pdb
-D:\git_rep\Socket\WebService\bin\Debug\netcoreapp2.0\Sokcet.exe
-D:\git_rep\Socket\WebService\bin\Debug\netcoreapp2.0\Sokcet.pdb
-D:\git_rep\Socket\WebService\bin\Debug\netcoreapp2.0\Sokcet.exe.config
 D:\git_rep\Socket\WebService\obj\Debug\netcoreapp2.0\WebService.csprojResolveAssemblyReference.cache

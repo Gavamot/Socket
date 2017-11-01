@@ -3,20 +3,26 @@ using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Test
+namespace WebService
 {
-    [JsonConverter(typeof(MessageSerializer))]
     public class Message
     {
         public int ClassID { get; set; }
         public string ClassName { get; set; }
         public int MessageType { get; set; }
-        public Guid ObjectGuid { get; set; }
-        public List<Object> Objects { get; set; } = new List<object>();
+        public string ObjectGuid { get; set; }
+        public Object[] Objects { get; set; } = new Object[0];
         public int Operation { get; set; }
-        public Dictionary<int, string> Parameters { get; set; } = new Dictionary<int, string>();
-        public bool RootObject { get; set; }
-        public string Data { get; set; }
+        public string[] Parameters { get; set; } = new string[0];
+        public string ParameterWeb { get; set; }
+        public bool RootObject { get; set; } = true;
+
+        public static Message GetMessageromBytes(byte[] bytes)
+        {
+            string jsonStr = Encoding.UTF8.GetString(bytes);
+            var resArr = JsonConvert.DeserializeObject<Message[]>(jsonStr);
+            return resArr[0];
+        }
 
         public static int GetMessageType(EASCMessagePath mp, EASCMessage mt)
         {
@@ -30,34 +36,32 @@ namespace Test
                 ClassID = 2,
                 ClassName = "CASCMessage",
                 MessageType = GetMessageType(EASCMessagePath.eOnlyFoward, EASCMessage.eAutorizationMessage),
-                ObjectGuid = new Guid("4c6498c7-ebb1-4249-b9c9-7cc28d01dc9d"),
+                ObjectGuid = "4c6498c7-ebb1-4249-b9c9-7cc28d01dc9d",
                 Operation = (int)EASCOperation.eNoAccessOperation,
-                Parameters = new Dictionary<int, string>
-                {
-                    {0, "web"}, // Login - Admin
-                    {1, "Nz����"}, // Password - Admin
-                },
+                //Parameters = new Dictionary<int, string>
+                //{
+                //    {0, "web"}, // Login - Admin
+                //    {1, "Nz����"}, // Password - Admin
+                //},
+
                 RootObject = true,
             };
         }
 
-        public static Message CreateGiveIve50ArchiveCodesInfoMessage(AsynchronousClient client)
+        public static Message CreateAscGetBrigadesInfoMessage()
         {
             return new Message
             {
                 ClassID = 2,
                 ClassName = "CASCMessage",
                 MessageType = GetMessageType(EASCMessagePath.eOnlyFoward, EASCMessage.eWebGetBrigadesInfo),
-                ObjectGuid = new Guid("4c6498c7-ebb1-4249-b9c9-7cc28d01dc91"),
-                Operation = 20,
-                Parameters = new Dictionary<int, string>
+                ObjectGuid = "4c6498c7-ebb1-4249-b9c9-7cc28d01dc91",
+                Operation = (int)EASCOperation.eNoAccessOperation,
+                ParameterWeb = JsonConvert.SerializeObject(new List<int>
                 {
-                    {0, client.MessageQueueIndex.ToString()},
-                    {1, QDate.GetString(new DateTime(2017, 10, 18))},
-                    {2, QDate.GetString(new DateTime(2017, 10, 19))}
-                },
+                   1, 2, 3
+                }),
                 RootObject = true
-                
             };
         }
     }
