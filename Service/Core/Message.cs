@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
+using Service.Services;
 
 namespace Service.Core
 {
-    public class Message
+    public class Message : IMessage
     {
         public int ClassID { get; set; }
         public string ClassName { get; set; }

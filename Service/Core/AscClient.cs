@@ -70,7 +70,7 @@ namespace Service.Core
         private List<byte> autorizeReceived { get; set; }
 
         public bool IsStarted => client.Connected;
-        private AscConfig config;
+        private readonly AscConfig config;
         public int Tries => config.Tries;
         private uint reqestId = 1;
         private ILogger log;

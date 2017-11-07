@@ -7,25 +7,27 @@ using Service.DataClasses;
 using Service.Core;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using Service.Services;
 
 namespace Service.Controllers
 {
     //[Route("api/[controller]")]
-    public class ValuesController : Controller
+    public class BrigadeController : Controller
     {
-        protected readonly Config config;
+        //protected readonly Config config;
         protected readonly ILogger logger;
-        public ValuesController(IOptions<Config> config, ILogger<ValuesController> logger)
+        protected readonly AscPool pool;
+        public BrigadeController(ILogger<BrigadeController> logger, AscPool pool)
         {
-            this.config = config.Value;
             this.logger = logger;
+            this.pool = pool;
         }
 
         [Route("[controller]/Brigades")]
-        public DevicesListItem[] Get()
+        public DevicesListItem[] DeviceList()
         {
             var message = Message.CreateAscGetBrigadesInfoMessage();
-            var res = Startup.Pool.Get<DevicesListItem[]>(message);
+            var res = pool.Get<DevicesListItem[]>(message);
             return res;
         }
     }

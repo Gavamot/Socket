@@ -20,8 +20,8 @@ namespace Service
             var loggerFactory = new LoggerFactory();
             loggerFactory.AddFile("Logs/mylog-{Date}.txt");
             var log = loggerFactory.CreateLogger("123");
+            var pool = new AscPool(AscConfig.GetFakeConfig(), log);
 
-            var pool = new AscPool(6, AscConfig.GetFakeConfig(), log);
             for (int i = 0; i < 80; i++)
             {
                 var thread = new Thread(() =>
@@ -46,8 +46,8 @@ namespace Service
 
         public static void Main(string[] args)
         {
-            Test();
-            //BuildWebHost(args).Run();
+            //Test();
+            BuildWebHost(args).Run();
         }
 
         public static IWebHost BuildWebHost(string[] args) =>

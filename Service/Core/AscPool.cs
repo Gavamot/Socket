@@ -3,60 +3,81 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Service.Services;
 
 namespace Service.Core
 {
-    public class AscPool
+    public class AscPool : IClientPool
     {
         private MyObjectPool<AscClient> pool;
-        public readonly int Size;
-        private readonly ILogger log;
-        private readonly AscConfig config;
+        protected ILogger log;
+        protected AscConfig config;
 
-        public AscPool(int size, AscConfig config, ILogger logger)
+        public AscPool(AscConfig config, ILogger logger)
         {
-            this.Size = size;
-            this.log = logger;
-            this.config = config;
-            CreatePool(size, config, logger);
+            Init(config, logger);
         }
 
-        private void CreatePool(int size, AscConfig config, ILogger log)
+        protected void Init(AscConfig config, ILogger logger)
         {
-            var ascPool = new AscClient[size];
-            for (int i = 0; i < size; i++)
+            if(pool != null)
+                throw new Exception("Пул уже был создан");
+            this.log = logger;
+            this.config = config;
+            CreatePool(this.config, logger);
+        }
+
+        private void CreatePool(AscConfig config, ILogger log)
+        {
+            var ascPool = new AscClient[config.SocketCount];
+            for (int i = 0; i < config.SocketCount; i++)
             {
                 ascPool[i] = new AscClient($"ascClient_{i}", config, log);
                 bool isStarted = ascPool[i].StartClient();
             }
             pool = new MyObjectPool<AscClient>(ascPool);
         }
-        
+
+        public T Get<T>(IMessage msg)
+        {
+            return Get<T>(msg as Message);
+        }
+
+        private bool IsResEmpty<T>(T res)
+        {
+            return res == null || res.Equals(default(T));
+        }
+
         public T Get<T>(Message msg)
         {
+            int tryes = config.Tries;
             var res = default(T);
-            var client = pool.GetObject();
-            try
+            while (IsResEmpty(res) && tryes > 0)
             {
-                res = client.Reqvest<T>(msg);
-                Console.WriteLine($"T={Thread.CurrentThread.Name}  C={client.Name}");
-            }
-            catch (Exception e)
-            {
-                string theadName = Thread.CurrentThread.Name;
-                log.LogError($"В потоке { theadName } произошла ошибка. socet {client?.Name}", e);
+                var client = pool.GetObject();
                 try
                 {
-                    client?.StopClient();
-                    log.LogError($"В потоке { theadName } перезапущен сокет {client?.Name}");
+                    res = client.Reqvest<T>(msg);
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    log.LogError($"В потока { theadName } при выключении сокета произошла ошибка socet {client?.Name}", ex);
+                    string theadName = Thread.CurrentThread.Name;
+                    try
+                    {
+                        client?.StopClient();
+                    }
+                    catch (Exception ex)
+                    {
+                        log.LogError($"В потока { theadName } при выключении сокета произошла ошибка socet {client?.Name}", ex);
+                    }
+                    client = new AscClient(client?.Name, config, log);
                 }
-                client = new AscClient(client?.Name, config, log);
+                pool.PutObject(client);
+                if(IsResEmpty(res))
+                    Thread.Sleep(config.DelayMsTries);
+                tryes--;
             }
-            pool.PutObject(client);
             return res;
         } 
 

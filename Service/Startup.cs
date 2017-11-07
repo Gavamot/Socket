@@ -4,29 +4,34 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Service.Core;
+using Service.Services;
 
 namespace Service
 {
     public class Startup
     {
-        public static AscPool Pool; 
-
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
+        public const string ConfigSection = "AppConfiguration";
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
             services.AddOptions();
-            services.Configure<Config>(Configuration.GetSection("AppConfiguration"));
+            services.Configure<Config>(Configuration.GetSection(ConfigSection));
 
-           
-
+            services.AddSingleton<AscPool>(
+                provider =>
+                {
+                    var config = Configuration.GetSection(ConfigSection).Get<Config>().AscConfig;
+                    var loger = Configuration.Get<LoggerFactory>().CreateLogger("AscPool");
+                    return  new AscPool(config, loger);
+                }
+            );
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
@@ -37,7 +42,6 @@ namespace Service
             }
             app.UseMvc();
             loggerFactory.AddFile("Logs/mylog-{Date}.txt");
-            Pool = new AscPool(20, AscConfig.GetFakeConfig(), loggerFactory.CreateLogger("Pool"));
         }
     }
 }
