@@ -83,15 +83,28 @@ namespace Service.Core
             this.config = config;
         }
 
-        public void StartClient()
+        public bool StartClient()
         {
-            client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            //client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.KeepAlive, true);
-            client.NoDelay = true; // Отправлять сообщение на сервер немедленно. Не накапливая их в буфер.
-            client.BeginConnect(config.IpAdress, config.Port, ConnectCallback, client);
-            if (!connectDone.WaitOne(config.DelayMsConnect)) 
-                throw new AscConnectionException("Не удалось установить соединение с сервером таймаут превышен");
+            try
+            {
+                client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                //client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.KeepAlive, true);
+                client.NoDelay = true; // Отправлять сообщение на сервер немедленно. Не накапливая их в буфер.
+                client.BeginConnect(config.IpAdress, config.Port, ConnectCallback, client);
+                if (!connectDone.WaitOne(config.DelayMsConnect))
+                    throw new AscConnectionException("Не удалось установить соединение с сервером таймаут превышен");
+            }
+            catch (Exception)
+            {
+                client = null;
+                string m = $"{Name} не удалось установить соединение";
+                log.LogError(m);
+                return false;
+            }
+            return true;
         }
+
+
 
         public void StopClient()
         {
@@ -99,6 +112,7 @@ namespace Service.Core
             {
                 client.Shutdown(SocketShutdown.Both);
                 client.Close();
+                client = null;
             }
         }
 
@@ -165,10 +179,18 @@ namespace Service.Core
 
         private void ConnectCallback(IAsyncResult ar)
         {
-            Socket client = (Socket) ar.AsyncState;
-            client.EndConnect(ar);
-            if (!connectDone.Set())
-                throw new Exception("Не удалось установить соединение с сервером");
+            try
+            {
+                Socket client = (Socket) ar.AsyncState;
+                client.EndConnect(ar);
+                connectDone.Set();
+                if (!connectDone.Set())
+                    throw new Exception("Не удалось установить соединение с сервером");
+            }
+            catch (Exception e)
+            {
+                log.LogError("ConnectCallback error", e.Message, e);
+            }
         }
 
         private void Receive(Socket client)

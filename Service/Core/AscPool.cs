@@ -27,7 +27,7 @@ namespace Service.Core
             for (int i = 0; i < size; i++)
             {
                 ascPool[i] = new AscClient($"ascClient_{i}", config, log);
-                ascPool[i].StartClient();
+                bool isStarted = ascPool[i].StartClient();
             }
             pool = new MyObjectPool<AscClient>(ascPool);
         }
@@ -39,6 +39,7 @@ namespace Service.Core
             try
             {
                 res = client.Reqvest<T>(msg);
+                Console.WriteLine($"T={Thread.CurrentThread.Name}  C={client.Name}");
             }
             catch (Exception e)
             {

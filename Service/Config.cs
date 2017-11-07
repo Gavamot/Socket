@@ -17,9 +17,9 @@ namespace Service
             {
                 IpAdress = "192.168.1.46",
                 Port = 1336,
-                DelayMsConnect = 15000,
-                DelayMsRequest = 1000 * 60 * 60,
-                DelayMsSend = 10000 * 60 *60,
+                DelayMsConnect = 5000,
+                DelayMsRequest = 1000 * 60,
+                DelayMsSend = 10000 * 60,
                 Tries = 10
             };
             return res;

@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Service.Core;
 
 namespace Service
 {
     public class Startup
     {
+        public static AscPool Pool; 
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -21,6 +24,9 @@ namespace Service
             services.AddMvc();
             services.AddOptions();
             services.Configure<Config>(Configuration.GetSection("AppConfiguration"));
+
+           
+
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
@@ -31,6 +37,7 @@ namespace Service
             }
             app.UseMvc();
             loggerFactory.AddFile("Logs/mylog-{Date}.txt");
+            Pool = new AscPool(20, AscConfig.GetFakeConfig(), loggerFactory.CreateLogger("Pool"));
         }
     }
 }

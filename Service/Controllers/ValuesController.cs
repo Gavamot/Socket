@@ -22,9 +22,11 @@ namespace Service.Controllers
         }
 
         [Route("[controller]/Brigades")]
-        public string Get()
+        public DevicesListItem[] Get()
         {
-            return "value";
+            var message = Message.CreateAscGetBrigadesInfoMessage();
+            var res = Startup.Pool.Get<DevicesListItem[]>(message);
+            return res;
         }
     }
 }

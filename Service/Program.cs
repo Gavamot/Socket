@@ -21,8 +21,8 @@ namespace Service
             loggerFactory.AddFile("Logs/mylog-{Date}.txt");
             var log = loggerFactory.CreateLogger("123");
 
-            var pool = new AscPool(10, AscConfig.GetFakeConfig(), log);
-            for (int i = 0; i < 20; i++)
+            var pool = new AscPool(6, AscConfig.GetFakeConfig(), log);
+            for (int i = 0; i < 80; i++)
             {
                 var thread = new Thread(() =>
                 {
@@ -30,16 +30,10 @@ namespace Service
                     int ii = 1;
                     while (true)
                     {
-                        try
-                        {
-                            var res = pool.Get<DevicesListItem[]>(msg);
-                            Console.WriteLine($"{ii++}");
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine($"{Thread.CurrentThread.Name} {e.Message}");
-                            log.LogError($"{Thread.CurrentThread.Name} {e.Message}");
-                        }
+                        var res = pool.Get<DevicesListItem[]>(msg);
+                        //Console.WriteLine(res == null
+                        //    ? $"{Thread.CurrentThread.Name} - Не удалось выполнить запрос"
+                        //    : $"{Thread.CurrentThread.Name} - {ii++}");
                     }
                 })
                 {
@@ -52,7 +46,8 @@ namespace Service
 
         public static void Main(string[] args)
         {
-            BuildWebHost(args).Run();
+            Test();
+            //BuildWebHost(args).Run();
         }
 
         public static IWebHost BuildWebHost(string[] args) =>
