@@ -309,4 +309,5 @@ D:\git_rep\Socket\Service\obj\Debug\net47\Service.AssemblyInfoInputs.cache
 D:\git_rep\Socket\Service\obj\Debug\net47\Service.AssemblyInfo.cs
 D:\git_rep\Socket\Service\obj\Debug\net47\Service.exe
 D:\git_rep\Socket\Service\obj\Debug\net47\Service.pdb
+D:\git_rep\Socket\Service\bin\Debug\net47\appsettings.json
 D:\git_rep\Socket\Service\obj\Debug\net47\Service.csprojResolveAssemblyReference.cache

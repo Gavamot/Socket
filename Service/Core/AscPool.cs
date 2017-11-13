@@ -8,7 +8,7 @@ using Service.Services;
 
 namespace Service.Core
 {
-    public class AscPool : IClientPool
+    public class AscPool
     {
         private MyObjectPool<AscClient> pool;
         protected ILogger log;
@@ -39,11 +39,6 @@ namespace Service.Core
             pool = new MyObjectPool<AscClient>(ascPool);
         }
 
-        public T Get<T>(IMessage msg)
-        {
-            return Get<T>(msg as Message);
-        }
-
         private bool IsResEmpty<T>(T res)
         {
             return res == null || res.Equals(default(T));
@@ -62,6 +57,7 @@ namespace Service.Core
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine(e.Message);
                     string theadName = Thread.CurrentThread.Name;
                     try
                     {

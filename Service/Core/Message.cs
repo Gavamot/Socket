@@ -6,7 +6,7 @@ using Service.Services;
 
 namespace Service.Core
 {
-    public class Message : IMessage
+    public class Message
     {
         public int ClassID { get; set; }
         public string ClassName { get; set; }
@@ -30,40 +30,55 @@ namespace Service.Core
             return (int)mp | (int)mt;
         }
 
-        public static Message CreateAuthorizeMessage()
+        public static Message CreateStandartMessage(EASCMessage messageType)
         {
             return new Message
             {
                 ClassID = 2,
                 ClassName = "CASCMessage",
-                MessageType = GetMessageType(EASCMessagePath.eOnlyFoward, EASCMessage.eAutorizationMessage),
-                ObjectGuid = "4c6498c7-ebb1-4249-b9c9-7cc28d01dc9d",
-                Operation = (int)EASCOperation.eNoAccessOperation,
-                //Parameters = new Dictionary<int, string>
-                //{
-                //    {0, "web"}, // Login - Admin
-                //    {1, "Nz����"}, // Password - Admin
-                //},
-
-                RootObject = true,
-            };
-        }
-
-        public static Message CreateAscGetBrigadesInfoMessage()
-        {
-            return new Message
-            {
-                ClassID = 2,
-                ClassName = "CASCMessage",
-                MessageType = GetMessageType(EASCMessagePath.eOnlyFoward, EASCMessage.eWebGetBrigadesInfo),
+                MessageType = Message.GetMessageType(EASCMessagePath.eOnlyFoward, messageType),
                 ObjectGuid = "4c6498c7-ebb1-4249-b9c9-7cc28d01dc91",
                 Operation = (int)EASCOperation.eNoAccessOperation,
-                ParameterWeb = JsonConvert.SerializeObject(new List<int>
-                    {
-                       1, 2, 3
-                    }),
+                ParameterWeb = "",
                 RootObject = true
             };
         }
+
+
+        //public static Message CreateAuthorizeMessage()
+        //{
+        //    return new Message
+        //    {
+        //        ClassID = 2,
+        //        ClassName = "CASCMessage",
+        //        MessageType = GetMessageType(EASCMessagePath.eOnlyFoward, EASCMessage.eAutorizationMessage),
+        //        ObjectGuid = "4c6498c7-ebb1-4249-b9c9-7cc28d01dc9d",
+        //        Operation = (int)EASCOperation.eNoAccessOperation,
+        //        //Parameters = new Dictionary<int, string>
+        //        //{
+        //        //    {0, "web"}, // Login - Admin
+        //        //    {1, "Nz����"}, // Password - Admin
+        //        //},
+
+        //        RootObject = true,
+        //    };
+        //}
+
+        //public static Message CreateAscGetBrigadesInfoMessage()
+        //{
+        //    return new Message
+        //    {
+        //        ClassID = 2,
+        //        ClassName = "CASCMessage",
+        //        MessageType = GetMessageType(EASCMessagePath.eOnlyFoward, EASCMessage.eWebGetBrigadesInfo),
+        //        ObjectGuid = "4c6498c7-ebb1-4249-b9c9-7cc28d01dc91",
+        //        Operation = (int)EASCOperation.eNoAccessOperation,
+        //        ParameterWeb = JsonConvert.SerializeObject(new List<int>
+        //            {
+        //               1, 2, 3
+        //            }),
+        //        RootObject = true
+        //    };
+        //}
     }
 }

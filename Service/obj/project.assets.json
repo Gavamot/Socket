@@ -4668,17 +4668,17 @@
       ]
     },
     "Microsoft.CodeAnalysis.Analyzers/1.1.0": {
-      "sha512": "nlNajWrNuQUpli2RV7qiNSU9eFAJi0zTT7kksyd6GYyRVQVk8Osfyx1Y9rsGho1dlipBUEOfPcyBDDrMk17uZQ==",
+      "sha512": "HS3iRWZKcUw/8eZ/08GXKY2Bn7xNzQPzf8gRPHGSowX7u7XXu9i9YEaBeBNKUXWfI7qjvT2zXtLUvbN0hds8vg==",
       "type": "package",
       "path": "microsoft.codeanalysis.analyzers/1.1.0",
       "files": [
-        "Microsoft.CodeAnalysis.Analyzers.1.1.0.nupkg.sha512",
-        "Microsoft.CodeAnalysis.Analyzers.nuspec",
         "ThirdPartyNotices.rtf",
         "analyzers/dotnet/cs/Microsoft.CodeAnalysis.Analyzers.dll",
         "analyzers/dotnet/cs/Microsoft.CodeAnalysis.CSharp.Analyzers.dll",
         "analyzers/dotnet/vb/Microsoft.CodeAnalysis.Analyzers.dll",
         "analyzers/dotnet/vb/Microsoft.CodeAnalysis.VisualBasic.Analyzers.dll",
+        "microsoft.codeanalysis.analyzers.1.1.0.nupkg.sha512",
+        "microsoft.codeanalysis.analyzers.nuspec",
         "tools/install.ps1",
         "tools/uninstall.ps1"
       ]
@@ -4943,7 +4943,7 @@
       ]
     },
     "Microsoft.Extensions.FileProviders.Abstractions/2.0.0": {
-      "sha512": "VdQ40Ot9pp+NdpFnrv90vyr+CFxr3UxW2pf88Gln9Z1R36ygzMQfgEtGn72yHv1e7WEhzktrim+au3jc0L58oA==",
+      "sha512": "Z0AK+hmLO33WAXQ5P1uPzhH7z5yjDHX/XnUefXxE//SyvCb9x4cVjND24dT5566t/yzGp8/WLD7EG9KQKZZklQ==",
       "type": "package",
       "path": "microsoft.extensions.fileproviders.abstractions/2.0.0",
       "files": [
@@ -4965,7 +4965,7 @@
       ]
     },
     "Microsoft.Extensions.FileProviders.Physical/2.0.0": {
-      "sha512": "4UrsyYVSlcTHwg4K3E+U/iojmLO5V5TQq7k07eGGl1OCqiwiDeBQ0AOV/8bhrfdW+ag8NgoZfRDM2gB6jwkgRw==",
+      "sha512": "DKO2j2socZbHNCCVEWsLVpB3AQIIzKYFNyITVeWdA1jQ829GJIQf4MUD04+1c+Q2kbK03pIKQZmEy4CGIfgDZw==",
       "type": "package",
       "path": "microsoft.extensions.fileproviders.physical/2.0.0",
       "files": [
@@ -4976,7 +4976,7 @@
       ]
     },
     "Microsoft.Extensions.FileSystemGlobbing/2.0.0": {
-      "sha512": "qsxcl+PXJZLxACVLup1SVSBjHq9/hJTKmrfFZc/uTj2pF/c01k2GvEyd8W0pLUeiUdd0dJFcn5zR5nATzMhXog==",
+      "sha512": "UC87vRDUB7/vSaNY/FVhbdAyRkfFBTkYmcUoglxk6TyTojhSqYaG5pZsoP4e1ZuXktFXJXJBTvK8U/QwCo0z3g==",
       "type": "package",
       "path": "microsoft.extensions.filesystemglobbing/2.0.0",
       "files": [
@@ -5108,7 +5108,7 @@
       ]
     },
     "Microsoft.Extensions.Primitives/2.0.0": {
-      "sha512": "jz79pibwrY8I9wgBvrwfbEBknEge3W7vOVX+n6UIydzlsp7riQl5DgROoNE+W/WfVhcTtaYZwfARd4AfAx5hlw==",
+      "sha512": "ukg53qNlqTrK38WA30b5qhw0GD7y3jdI9PHHASjdKyTcBHTevFM2o23tyk3pWCgAV27Bbkm+CPQ2zUe1ZOuYSA==",
       "type": "package",
       "path": "microsoft.extensions.primitives/2.0.0",
       "files": [
@@ -5192,7 +5192,7 @@
       ]
     },
     "NETStandard.Library/2.0.0": {
-      "sha512": "bGReV4SwPx9+bgrWWx63FFLNPt15BiyI50mur+bMva7nBLwCKwz4eHCm3KbU5O+IkDhMmXYFJQezRJ5eOSQdRQ==",
+      "sha512": "7jnbRU+L08FXKMxqUflxEXtVymWvNOrS8yHgu9s6EM8Anr6T/wIX4nZ08j/u3Asz+tCufp3YVwFSEvFTPYmBPA==",
       "type": "package",
       "path": "netstandard.library/2.0.0",
       "files": [
@@ -5320,7 +5320,7 @@
       ]
     },
     "Newtonsoft.Json/10.0.3": {
-      "sha512": "wBM7i7i3U2WX0ecor4zdVGvgrwFUjuigBoHKiL+nH39fCOpCPjBY3RDqJM32edvdyTAVdjzlccHsg41+/+zpSA==",
+      "sha512": "hSXaFmh7hNCuEoC4XNY5DrRkLDzYHqPx/Ik23R4J86Z7PE/Y6YidhG602dFVdLBRSdG6xp9NabH3dXpcoxWvww==",
       "type": "package",
       "path": "newtonsoft.json/10.0.3",
       "files": [
@@ -6825,7 +6825,7 @@
       ]
     },
     "System.Runtime.CompilerServices.Unsafe/4.4.0": {
-      "sha512": "mbd0MKT/ObCkbGkla6VQZ1wcdVnH17CSLjJQfSOdkhmh4CyC9ztCqC92ZkRpkByW6ANMfuMMgv2HWK2jrmXMXA==",
+      "sha512": "9dLLuBxr5GNmOfl2jSMcsHuteEg32BEfUotmmUkmZjpR3RpVHE8YQwt0ow3p6prwA1ME8WqDVZqrr8z6H8G+Kw==",
       "type": "package",
       "path": "system.runtime.compilerservices.unsafe/4.4.0",
       "files": [
@@ -8027,6 +8027,7 @@
   "projectFileDependencyGroups": {
     ".NETFramework,Version=v4.7": [
       "Microsoft.AspNetCore >= 2.0.0",
+      "Microsoft.AspNetCore.Cors >= 2.0.0",
       "Microsoft.AspNetCore.Mvc >= 2.0.0",
       "Newtonsoft.Json >= 10.0.3",
       "Serilog.Extensions.Logging.File >= 1.1.0"
@@ -8077,6 +8078,10 @@
       "net47": {
         "dependencies": {
           "Microsoft.AspNetCore": {
+            "target": "Package",
+            "version": "2.0.0"
+          },
+          "Microsoft.AspNetCore.Cors": {
             "target": "Package",
             "version": "2.0.0"
           },

@@ -48,11 +48,8 @@ namespace Service.Core
         public class StateObject
         {
             public Socket workSocket = null;
-
-            public const int BufferSize = 1024;
-
+            public const int BufferSize = 2000000;//1024;
             public bool isConfirmReceived = false;
-
             public byte[] buffer = new byte[BufferSize];
         }
 
@@ -94,9 +91,10 @@ namespace Service.Core
                 if (!connectDone.WaitOne(config.DelayMsConnect))
                     throw new AscConnectionException("Не удалось установить соединение с сервером таймаут превышен");
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                client = null;
+                Console.WriteLine(e.Message);
+               
                 string m = $"{Name} не удалось установить соединение";
                 log.LogError(m);
                 return false;
@@ -126,6 +124,10 @@ namespace Service.Core
         {
             if (client == null)
                 StartClient();
+
+            if (client == null)
+                throw new AscConnectionException("Не удалось установить соединение с сервером");
+
             if (!client.Connected)
                 throw new AscConnectionException("Соединение с сервером отсутствует");
 
@@ -138,6 +140,7 @@ namespace Service.Core
 
             // Отправляем сообщение
             Send(client, data);
+
             // Дожидаемся завершения отправки
             if (!sendDone.WaitOne(config.DelayMsSend))
                 throw new AscSendException("Превышен интервал завершения отправки данных");
@@ -145,17 +148,23 @@ namespace Service.Core
 
             // Получаем данные от сервера
             Receive(client);
+
+           
             // Дожидаемся пока данные будут полученны
             if (!receiveDone.WaitOne(config.DelayMsRequest))
                 throw new AscSendException("Превышен интервал получения данных от сервера");
             receiveDone.Reset();
 
+            
+
             // Если пришел только пакет с подтверждением получаем ответ на наш запрос
             if (response.Count <= Packet.MAX_CONFIRM_PACK_SIZE)
             {
                 Receive(client);
-                if (!receiveDone.WaitOne(config.DelayMsRequest))
+                if (!receiveDone.WaitOne(5000))
+                {
                     throw new AscSendException("Превышен интервал получения данных от сервера");
+                }
                 receiveDone.Reset();
             }
             
@@ -168,12 +177,15 @@ namespace Service.Core
             if (!sendDone.WaitOne(config.DelayMsSend))
                 throw new AscSendException("Превышен интервал завершения отправки подверждения данных");
             sendDone.Reset();
+          
 
+            if (packets.Count != 2) return default(T);
             reqestId++; // Двигаем счетчик сообщений
 
             var packet = Packet.ParceReceivedPacket(packets[1]);
             var rMsg = JsonConvert.DeserializeObject<Message[]>(packet)[0];
             var res = JsonConvert.DeserializeObject<T>(rMsg.ParameterWeb);
+         
             return res;
         }
 
@@ -189,26 +201,36 @@ namespace Service.Core
             }
             catch (Exception e)
             {
+                Console.WriteLine("ConnectCallback error");
                 log.LogError("ConnectCallback error", e.Message, e);
             }
         }
 
         private void Receive(Socket client)
         {
-            StateObject state = new StateObject();
-            state.workSocket = client;
-            client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
+            try
+            {
+                StateObject state = new StateObject();
+                state.workSocket = client;
+                client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
+            }catch(Exception e)
+            {
+                Console.WriteLine($"!!Receive!! {Name} - reqestId={reqestId}   ошибка {e.Message}");
+                log.LogError($"!!Receive!! {Name} - reqestId={reqestId}   ошибка {e.Message}", e);
+            }
+           
         }
 
-        /// <summary>
-        /// Счетчик пакетов в запросе их должно быть 2 подтверждеие и ответ
-        /// </summary>
+        
         private void ReceiveCallback(IAsyncResult ar)
         {
             try
             {
                 StateObject state = (StateObject) ar.AsyncState;
                 Socket socket = state.workSocket;
+                if (socket == null)
+                    return;
+
                 // Проверка сокета на наличие данных
                 int bytesRead = socket.EndReceive(ar);
                 if (bytesRead < StateObject.BufferSize)
@@ -236,13 +258,22 @@ namespace Service.Core
             }
             catch (Exception e)
             {
+                Console.WriteLine($"!!ReceiveCallback!! {Name} - reqestId={reqestId}   ошибка {e.Message}");
                 log.LogError($"!!ReceiveCallback!! {Name} - reqestId={reqestId}   ошибка {e.Message}", e);
             }
         }
 
         private void Send(Socket client, byte[] byteData)
         {
-            client.BeginSend(byteData, 0, byteData.Length, 0, SendCallback, client);
+            try
+            {
+                client.BeginSend(byteData, 0, byteData.Length, 0, SendCallback, client);
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"!!Send!! {Name} - reqestId={reqestId}   ошибка {e.Message}");
+                log.LogError($"!!Send!! {Name} - reqestId={reqestId}   ошибка {e.Message}", e);
+            }
         }
 
         private void SendCallback(IAsyncResult ar)
@@ -250,11 +281,13 @@ namespace Service.Core
             try
             {
                 Socket client = (Socket) ar.AsyncState;
+                if (client == null) return;
                 int bytesSent = client.EndSend(ar);
                 sendDone.Set();
             }
             catch (Exception e)
             {
+                Console.WriteLine($"!!SendCallback!! {Name} - reqestId={reqestId}   ошибка {e.Message}");
                 log.LogError($"!!SendCallback!! {Name} - reqestId={reqestId}   ошибка {e.Message}", e);
             }
         }

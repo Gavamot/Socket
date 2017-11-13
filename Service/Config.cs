@@ -11,6 +11,8 @@ namespace Service
         public int DelayMsRequest { get; set; }
         public int DelayMsSend { get; set; }
         public int Tries { get; set; }
+        public ServicesUpdateTime ServicesUpdateTimeMs { get; set; }
+
         /// <summary>
         /// Задержка между попытками
         /// </summary>
@@ -27,7 +29,8 @@ namespace Service
                 DelayMsRequest = 1000 * 60,
                 DelayMsSend = 10000 * 60,
                 Tries = 10,
-                DelayMsTries = 3000
+                DelayMsTries = 3000,
+                ServicesUpdateTimeMs = new ServicesUpdateTime() { BrigedeGetDeviceList = 10000 }
             };
             return res;
         }
@@ -36,5 +39,10 @@ namespace Service
     public class Config
     {
         public AscConfig AscConfig { get; set; }
+    }
+
+    public class ServicesUpdateTime
+    {
+        public int BrigedeGetDeviceList { get; set; }
     }
 }

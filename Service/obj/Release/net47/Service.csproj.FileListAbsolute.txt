@@ -1,3 +1,4 @@
+D:\git_rep\Socket\Service\bin\Release\net47\appsettings.json
 D:\git_rep\Socket\Service\bin\Release\net47\Service.exe.config
 D:\git_rep\Socket\Service\bin\Release\net47\Service.deps.json
 D:\git_rep\Socket\Service\bin\Release\net47\Service.exe
@@ -303,10 +304,10 @@ D:\git_rep\Socket\Service\bin\Release\net47\System.Xml.XmlDocument.dll
 D:\git_rep\Socket\Service\bin\Release\net47\System.Xml.XmlSerializer.dll
 D:\git_rep\Socket\Service\bin\Release\net47\System.Xml.XPath.dll
 D:\git_rep\Socket\Service\bin\Release\net47\System.Xml.XPath.XDocument.dll
-D:\git_rep\Socket\Service\obj\Release\net47\Service.csprojResolveAssemblyReference.cache
 D:\git_rep\Socket\Service\obj\Release\net47\Service.csproj.Service.exe.config
 D:\git_rep\Socket\Service\obj\Release\net47\Service.csproj.CoreCompileInputs.cache
 D:\git_rep\Socket\Service\obj\Release\net47\Service.AssemblyInfoInputs.cache
 D:\git_rep\Socket\Service\obj\Release\net47\Service.AssemblyInfo.cs
 D:\git_rep\Socket\Service\obj\Release\net47\Service.exe
 D:\git_rep\Socket\Service\obj\Release\net47\Service.pdb
+D:\git_rep\Socket\Service\obj\Release\net47\Service.csprojResolveAssemblyReference.cache

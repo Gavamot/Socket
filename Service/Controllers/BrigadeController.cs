@@ -16,19 +16,25 @@ namespace Service.Controllers
     {
         //protected readonly Config config;
         protected readonly ILogger logger;
-        protected readonly AscPool pool;
-        public BrigadeController(ILogger<BrigadeController> logger, AscPool pool)
+        protected readonly BrigadeService bs = Startup.Bs;
+
+        public BrigadeController(ILogger<BrigadeController> logger)//, BrigadeService bs)
         {
             this.logger = logger;
-            this.pool = pool;
+            //this.bs = bs;
         }
 
-        [Route("[controller]/Brigades")]
-        public DevicesListItem[] DeviceList()
+        [Route("[controller]/DeviceList")] // Brigade/DeviceList
+        public ResponseMessage<DevicesListItem[]> DeviceList()
         {
-            var message = Message.CreateAscGetBrigadesInfoMessage();
-            var res = pool.Get<DevicesListItem[]>(message);
+            var res = bs.GetDevicesList();
             return res;
+        }
+
+        [Route("Test")] // Brigade/DeviceList
+        public string Test()
+        {
+            return "Hello";
         }
     }
 }
