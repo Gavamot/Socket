@@ -48,7 +48,7 @@ namespace Service.Core
         public class StateObject
         {
             public Socket workSocket = null;
-            public const int BufferSize = 2000000;//1024;
+            public const int BufferSize = 10000;//1024;
             public bool isConfirmReceived = false;
             public byte[] buffer = new byte[BufferSize];
         }
@@ -84,8 +84,8 @@ namespace Service.Core
         {
             try
             {
+                reqestId = 1;
                 client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                //client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.KeepAlive, true);
                 client.NoDelay = true; // Отправлять сообщение на сервер немедленно. Не накапливая их в буфер.
                 client.BeginConnect(config.IpAdress, config.Port, ConnectCallback, client);
                 if (!connectDone.WaitOne(config.DelayMsConnect))
@@ -149,19 +149,16 @@ namespace Service.Core
             // Получаем данные от сервера
             Receive(client);
 
-           
             // Дожидаемся пока данные будут полученны
             if (!receiveDone.WaitOne(config.DelayMsRequest))
                 throw new AscSendException("Превышен интервал получения данных от сервера");
             receiveDone.Reset();
 
-            
-
             // Если пришел только пакет с подтверждением получаем ответ на наш запрос
             if (response.Count <= Packet.MAX_CONFIRM_PACK_SIZE)
             {
                 Receive(client);
-                if (!receiveDone.WaitOne(5000))
+                if (!receiveDone.WaitOne(config.DelayMsRequest))
                 {
                     throw new AscSendException("Превышен интервал получения данных от сервера");
                 }
@@ -177,7 +174,6 @@ namespace Service.Core
             if (!sendDone.WaitOne(config.DelayMsSend))
                 throw new AscSendException("Превышен интервал завершения отправки подверждения данных");
             sendDone.Reset();
-          
 
             if (packets.Count != 2) return default(T);
             reqestId++; // Двигаем счетчик сообщений
@@ -228,9 +224,7 @@ namespace Service.Core
             {
                 StateObject state = (StateObject) ar.AsyncState;
                 Socket socket = state.workSocket;
-                if (socket == null)
-                    return;
-
+                if (socket == null) return;
                 // Проверка сокета на наличие данных
                 int bytesRead = socket.EndReceive(ar);
                 if (bytesRead < StateObject.BufferSize)

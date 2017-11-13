@@ -34,7 +34,7 @@ namespace Service.Core
             for (int i = 0; i < config.SocketCount; i++)
             {
                 ascPool[i] = new AscClient($"ascClient_{i}", config, log);
-                bool isStarted = ascPool[i].StartClient();
+                //bool isStarted = ascPool[i].StartClient();
             }
             pool = new MyObjectPool<AscClient>(ascPool);
         }
@@ -74,6 +74,7 @@ namespace Service.Core
                     Thread.Sleep(config.DelayMsTries);
                 tryes--;
             }
+            if (res == null) throw new Exception("Не получилось получить данные");
             return res;
         } 
 

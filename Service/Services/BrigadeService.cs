@@ -66,18 +66,17 @@ namespace Service.Services
 
         private void UpdateDevicesCash()
         {
-            var message = Message.CreateStandartMessage(EASCMessage.eWebGetBrigadesInfo);
-            var res = pool.Get<DevicesListItem[]>(message);
-            if (res == default(DevicesListItem[]))
+            try
+            {
+                var message = Message.CreateStandartMessage(EASCMessage.eWebGetBrigadesInfo);
+                DevicesCash = pool.Get<DevicesListItem[]>(message);
+                devicesCashLastUpdate = DateTime.Now;
+                Console.WriteLine($"{Thread.CurrentThread.Name} - данные успешно обновленны");
+            }
+            catch(Exception e)
             {
                 Console.WriteLine($"{Thread.CurrentThread.Name} - Не удалось обновить данные");
-                //Debug.Print($"{Thread.CurrentThread.Name} - Не удалось обновить данные");
-                return;
             }
-            devicesCashLastUpdate = DateTime.Now;
-            DevicesCash = res;
-            Console.WriteLine($"{Thread.CurrentThread.Name} - данные успешно обновленны");
-            //Debug.Print($"{Thread.CurrentThread.Name} - данные успешно обновленны");
         }
 #endregion
 
