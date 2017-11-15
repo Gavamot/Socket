@@ -70,7 +70,7 @@ namespace Service.Core
                     client = new AscClient(client?.Name, config, log);
                 }
                 pool.PutObject(client);
-                if(IsResEmpty(res))
+                if (IsResEmpty(res))
                     Thread.Sleep(config.DelayMsTries);
                 tryes--;
             }

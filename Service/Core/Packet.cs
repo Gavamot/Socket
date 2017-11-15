@@ -46,10 +46,11 @@ namespace Service.Core
             return data.IndexOf(START) ;
         }
 
-        private static void DeleteExcessBytes(List<byte> data)
+        private static List<byte> DeleteExcessBytes(List<byte> data)
         {
+            int start = data.IndexOf(START);
             int end = data.IndexOf(END) + 1;
-            data.RemoveRange(end, data.Count - end);
+            return data.GetRange(start, end);
         }
 
         static List<byte> BackChangeBytes(List<byte> data)
@@ -154,8 +155,8 @@ namespace Service.Core
 
         public static string ParceReceivedPacket(List<byte> data)
         {
-            DeleteExcessBytes(data);
-            var packet = BackChangeBytes(data);
+            var pac =  DeleteExcessBytes(data);
+            var packet = BackChangeBytes(pac);
             if (!Crc.IsEqualCheckSum(packet))
                 throw new PacketParceException("crc eror");
             int startIndex = sizeof(uint) + sizeof(short);

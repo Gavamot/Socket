@@ -26,13 +26,6 @@ namespace Service.Services
             this.devicesCashUpdateTime = devicesCashUpdateTime;
         }
 
-        //public static BrigadeService GetInstance(AscPool pool, int devicesCashUpdateTime)
-        //{
-        //    if (self == null)
-        //        self = new BrigadeService(pool, devicesCashUpdateTime);
-        //    return self;
-        //}
-
 #region devicesCashUpdate
 
        public void Start()
@@ -71,7 +64,7 @@ namespace Service.Services
                 var message = Message.CreateStandartMessage(EASCMessage.eWebGetBrigadesInfo);
                 DevicesCash = pool.Get<DevicesListItem[]>(message);
                 devicesCashLastUpdate = DateTime.Now;
-                Console.WriteLine($"{Thread.CurrentThread.Name} - данные успешно обновленны");
+                Console.WriteLine($"{devicesCashLastUpdate:yyyy-MM-dd HH:mm:ss} - {Thread.CurrentThread.Name} - данные успешно обновленны");
             }
             catch(Exception e)
             {

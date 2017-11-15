@@ -11,6 +11,8 @@ namespace Service
         public int DelayMsRequest { get; set; }
         public int DelayMsSend { get; set; }
         public int Tries { get; set; }
+        public int BufferSize { get; set; }
+
         public ServicesUpdateTime ServicesUpdateTimeMs { get; set; }
 
         /// <summary>

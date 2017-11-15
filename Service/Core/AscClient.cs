@@ -4,6 +4,8 @@ using System.Net.Sockets;
 using System.Threading;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 
@@ -48,7 +50,7 @@ namespace Service.Core
         public class StateObject
         {
             public Socket workSocket = null;
-            public const int BufferSize = 10000;//1024;
+            public const int BufferSize = 1000000;
             public bool isConfirmReceived = false;
             public byte[] buffer = new byte[BufferSize];
         }
@@ -102,8 +104,6 @@ namespace Service.Core
             return true;
         }
 
-
-
         public void StopClient()
         {
             if (client != null)
@@ -122,8 +122,16 @@ namespace Service.Core
         /// <returns>вернет null в случаи ошибки иначе обьет типа Т</returns>
         public T Reqvest<T>(Message message)
         {
+            Console.WriteLine("1 - Начало");
+
+            string fName = Directory.GetCurrentDirectory() + "/f.txt";
+            if(File.Exists(fName))
+                File.Delete(fName);
+
             if (client == null)
                 StartClient();
+
+            Console.WriteLine("2 - Клиент запущен");
 
             if (client == null)
                 throw new AscConnectionException("Не удалось установить соединение с сервером");
@@ -134,9 +142,13 @@ namespace Service.Core
             this.response = new List<byte>();
 
             // Формируем сообщение для отправки
+            Console.WriteLine("3 - Формируем сообщение для отправки");
+
             var msg = new Message[] { message };
             var msgJson = JsonConvert.SerializeObject(msg);
             var data = Packet.MakeSendPacket(msgJson, reqestId);
+
+            Console.WriteLine("4 - Отправляем запрос");
 
             // Отправляем сообщение
             Send(client, data);
@@ -145,43 +157,63 @@ namespace Service.Core
             if (!sendDone.WaitOne(config.DelayMsSend))
                 throw new AscSendException("Превышен интервал завершения отправки данных");
             sendDone.Reset();
+            Console.WriteLine("5 - завершение отправки");
 
-            // Получаем данные от сервера
-            Receive(client);
+            // Получаем данные от сервера подтверждение
+            ReceiveConfirm(client);
+            Console.WriteLine("6 - Получаем данные от сервера подтверждение");
 
             // Дожидаемся пока данные будут полученны
             if (!receiveDone.WaitOne(config.DelayMsRequest))
                 throw new AscSendException("Превышен интервал получения данных от сервера");
             receiveDone.Reset();
+            Console.WriteLine("7 - подтверждение полученно");
 
-            // Если пришел только пакет с подтверждением получаем ответ на наш запрос
-            if (response.Count <= Packet.MAX_CONFIRM_PACK_SIZE)
-            {
-                Receive(client);
-                if (!receiveDone.WaitOne(config.DelayMsRequest))
-                {
-                    throw new AscSendException("Превышен интервал получения данных от сервера");
-                }
-                receiveDone.Reset();
-            }
+
+            //получаем ответ на наш запрос
+            Console.WriteLine("8 - получаем ответ на наш запрос");
+            Receive(client);
+            if (!receiveDone.WaitOne(config.DelayMsRequest))
+                throw new AscSendException("Превышен интервал получения данных от сервера");
             
-            var packets = Packet.SplitToPackets(response);
+            receiveDone.Reset();
+            Console.WriteLine("9 - данные на запрос полученны");
 
-            // 0 - пакет подтверждеие
-            // 1 - пакет ответ на запрос
             // Отправляем подтверждение что получили данные
             Send(client, Packet.GetConfirmationPackBytes(reqestId).ToArray());
             if (!sendDone.WaitOne(config.DelayMsSend))
                 throw new AscSendException("Превышен интервал завершения отправки подверждения данных");
             sendDone.Reset();
 
-            if (packets.Count != 2) return default(T);
+            Console.WriteLine("14 - Потверждение отправленно");
             reqestId++; // Двигаем счетчик сообщений
 
-            var packet = Packet.ParceReceivedPacket(packets[1]);
+            string str = BitConverter.ToString(response.ToArray());
+            File.WriteAllText(fName, str, Encoding.UTF8);
+
+            string packet = String.Empty;
+            try
+            {
+                packet = Packet.ParceReceivedPacket(response);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(BitConverter.ToString(response.ToArray()));
+                return default(T);
+            }
+
+            Console.WriteLine("Packet");
             var rMsg = JsonConvert.DeserializeObject<Message[]>(packet)[0];
+            Console.WriteLine("rMsg");
             var res = JsonConvert.DeserializeObject<T>(rMsg.ParameterWeb);
-         
+            Console.WriteLine("res");
+
+            Console.WriteLine("12 - Запрос успешно выполнен");
+            Console.WriteLine("13 - Отправляем подтверждение серверу ");
+
+            
+
+
             return res;
         }
 
@@ -201,6 +233,50 @@ namespace Service.Core
                 log.LogError("ConnectCallback error", e.Message, e);
             }
         }
+
+        private void ReceiveConfirm(Socket client)
+        {
+            try
+            {
+                StateObject state = new StateObject();
+                state.workSocket = client;
+                client.BeginReceive(state.buffer, 0, Packet.MAX_CONFIRM_PACK_SIZE, 0, ReceivePacketCallback, state);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"!!Receive!! {Name} - reqestId={reqestId}   ошибка {e.Message}");
+                log.LogError($"!!Receive!! {Name} - reqestId={reqestId}   ошибка {e.Message}", e);
+            }
+        }
+
+        private void ReceivePacketCallback(IAsyncResult ar)
+        {
+            try
+            {
+                StateObject state = (StateObject)ar.AsyncState;
+                Socket socket = state.workSocket;
+                int bytesRead = socket.EndReceive(ar);
+                receiveDone.Set();
+                //// Проверка сокета на наличие данных
+                //int bytesRead = socket.EndReceive(ar);
+                //if (bytesRead > 0)
+                //{
+                //    response.AddRange(state.buffer);
+                //    socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
+                //}
+                //else
+                //{
+                //    response.AddRange(state.buffer);
+                //    receiveDone.Set();
+                //}
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"!!ReceiveCallback!! {Name} - reqestId={reqestId}   ошибка {e.Message}");
+                log.LogError($"!!ReceiveCallback!! {Name} - reqestId={reqestId}   ошибка {e.Message}", e);
+            }
+        }
+
 
         private void Receive(Socket client)
         {
@@ -224,30 +300,17 @@ namespace Service.Core
             {
                 StateObject state = (StateObject) ar.AsyncState;
                 Socket socket = state.workSocket;
-                if (socket == null) return;
                 // Проверка сокета на наличие данных
                 int bytesRead = socket.EndReceive(ar);
-                if (bytesRead < StateObject.BufferSize)
+                if (bytesRead > 0 && bytesRead == StateObject.BufferSize)
                 {
-                    int countBytes = state.buffer.IndexOf(END) + 1;
-                    if (countBytes == 0) return;
-                    var buffer = new byte[countBytes];
-                    Array.Copy(state.buffer, buffer, countBytes);
-                    response.AddRange(buffer);
-
-                    if (socket.Available > 0)
-                    {
-                        socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
-                    }
-                    else
-                    {
-                        receiveDone.Set();
-                    }
+                    response.AddRange(state.buffer);
+                    socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
                 }
                 else
                 {
                     response.AddRange(state.buffer);
-                    socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
+                    receiveDone.Set();
                 }
             }
             catch (Exception e)
@@ -275,7 +338,6 @@ namespace Service.Core
             try
             {
                 Socket client = (Socket) ar.AsyncState;
-                if (client == null) return;
                 int bytesSent = client.EndSend(ar);
                 sendDone.Set();
             }
