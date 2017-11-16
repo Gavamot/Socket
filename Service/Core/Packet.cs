@@ -46,17 +46,44 @@ namespace Service.Core
             return data.IndexOf(START) ;
         }
 
-        private static List<byte> DeleteExcessBytes(List<byte> data)
+        /// <summary>
+        /// Выделяет 2-ой пакет из массива байтов
+        /// </summary>
+        /// <param name="data">массив байтов</param>
+        /// <returns>2-ой пакет</returns>
+        private static byte[] DeleteExcessBytes(byte[] data)
         {
-            int start = data.IndexOf(START);
-            int end = data.IndexOf(END) + 1;
-            return data.GetRange(start, end);
+            int start = data.IndexOf(START); // Начало первого пакета
+            int end = data.IndexOf(END) + 1; // Конец первого пакета
+            int ln = end - start; // Длина первого пакета
+
+            int startP = -1, endP = -1;
+            for (int i = end; i < data.Length; i++)
+            {
+                if (Packet.START == data[i])
+                {
+                    startP = i;
+                    endP = -1;
+                }
+                else if (startP != -1 && Packet.END == data[i])
+                {
+                    endP = i;
+                    break;
+                }
+            }
+
+            ln = endP - startP + 1;
+            byte[] result = new byte[ln];
+            Array.Copy(data, startP, result, 0, ln);
+            return result;
         }
+
+      
 
         static List<byte> BackChangeBytes(List<byte> data)
         {
             int index = 1;
-            var res = new List<byte>();;
+            var res = new List<byte>();
             var ln = data.Count - 1;
             while (index < ln)
             {
@@ -153,10 +180,10 @@ namespace Service.Core
             return res;
         }
 
-        public static string ParceReceivedPacket(List<byte> data)
+        public static string ParceReceivedPacket(byte[] data)
         {
-            var pac =  DeleteExcessBytes(data);
-            var packet = BackChangeBytes(pac);
+            var pac = DeleteExcessBytes(data);
+            var packet = BackChangeBytes(pac.ToList());
             if (!Crc.IsEqualCheckSum(packet))
                 throw new PacketParceException("crc eror");
             int startIndex = sizeof(uint) + sizeof(short);

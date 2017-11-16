@@ -33,7 +33,7 @@ namespace Service.Core
             var ascPool = new AscClient[config.SocketCount];
             for (int i = 0; i < config.SocketCount; i++)
             {
-                ascPool[i] = new AscClient($"ascClient_{i}", config, log);
+                ascPool[i] = new AscClient($"ascClient_{i}", config.IpAdress, config.Port, config.ServicesUpdateTimeMs, log);
                 //bool isStarted = ascPool[i].StartClient();
             }
             pool = new MyObjectPool<AscClient>(ascPool);
@@ -67,14 +67,16 @@ namespace Service.Core
                     {
                         log.LogError($"В потока { theadName } при выключении сокета произошла ошибка socet {client?.Name}", ex);
                     }
-                    client = new AscClient(client?.Name, config, log);
+                    client = new AscClient(client?.Name, config.IpAdress, config.Port, config.ServicesUpdateTimeMs, log);
                 }
                 pool.PutObject(client);
                 if (IsResEmpty(res))
                     Thread.Sleep(config.DelayMsTries);
                 tryes--;
             }
-            if (res == null) throw new Exception("Не получилось получить данные");
+            if (res == null)
+                throw new Exception("Не получилось получить данные");
+
             return res;
         } 
 
