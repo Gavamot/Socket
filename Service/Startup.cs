@@ -5,20 +5,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Service.Core;
 using Service.Services;
+using Service.Configuration;
 
 namespace Service
 {
     public class Startup
     {
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
+
         public const string ConfigSection = "AppConfiguration";
-        private static AscPool Pool;
-        public static BrigadeService Bs;
+        public static DeviceService Ds;
+
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -27,15 +30,13 @@ namespace Service
             services.Configure<Config>(Configuration.GetSection(ConfigSection));
             services.AddCors();
 
-          
-            // Создаем пул соединений
             var config = Configuration.GetSection(ConfigSection).Get<Config>().AscConfig;
-            var loger = Configuration.Get<LoggerFactory>().CreateLogger("AscPool");
-            Pool = new AscPool(config, loger);
+            var logFactory = Configuration.Get<LoggerFactory>();
 
-            Bs = new BrigadeService(Pool, config.ServicesUpdateTimeMs.BrigedeGetDeviceList);
-            Bs.Start();
-            //services.AddSingleton(provider => Bs);
+            AscPool.Init(config.Connect, config.ConnectionPoolSize, logFactory.CreateLogger("PollSize"));
+
+            Ds = new DeviceService(config.DeviceService, logFactory.CreateLogger("DeviceService"));
+            Ds.Start();
 
         }
 

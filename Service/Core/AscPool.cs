@@ -4,37 +4,40 @@ using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Service.Configuration;
 using Service.Services;
 
 namespace Service.Core
 {
     public class AscPool
     {
-        private MyObjectPool<AscClient> pool;
+        private  MyObjectPool<AscClient> pool;
         protected ILogger log;
-        protected AscConfig config;
+        protected ConnectionSettings config;
 
-        public AscPool(AscConfig config, ILogger logger)
-        {
-            Init(config, logger);
-        }
+        public static AscPool Instance { get; private set; }
 
-        protected void Init(AscConfig config, ILogger logger)
+        public AscPool(ConnectionSettings config, int connectionPoolSize, ILogger logger)
         {
-            if(pool != null)
-                throw new Exception("Пул уже был создан");
             this.log = logger;
             this.config = config;
-            CreatePool(this.config, logger);
+            CreatePool(config, connectionPoolSize, logger);
         }
 
-        private void CreatePool(AscConfig config, ILogger log)
+        public static void Init(ConnectionSettings config, int connectionPoolSize, ILogger log)
         {
-            var ascPool = new AscClient[config.SocketCount];
-            for (int i = 0; i < config.SocketCount; i++)
+            if(Instance != null)
+                throw new Exception("Пул уже был создан");
+            Instance = new AscPool(config, connectionPoolSize, log);
+        }
+
+        private void CreatePool(ConnectionSettings connectionSettings, int connectionPoolSize, ILogger log)
+        {
+            var ascPool = new AscClient[connectionPoolSize];
+            for (int i = 0; i < connectionPoolSize; i++)
             {
-                ascPool[i] = new AscClient($"ascClient_{i}", config.IpAdress, config.Port, config.ServicesUpdateTimeMs, log);
-                //bool isStarted = ascPool[i].StartClient();
+                ascPool[i] = new AscClient(connectionSettings, log);
+                ascPool[i].StartClient();
             }
             pool = new MyObjectPool<AscClient>(ascPool);
         }
@@ -44,39 +47,31 @@ namespace Service.Core
             return res == null || res.Equals(default(T));
         }
 
-        public T Get<T>(Message msg)
+        public T Get<T>(Message msg, ServiceConfig serviceSettings)
         {
-            int tryes = config.Tries;
             var res = default(T);
-            while (IsResEmpty(res) && tryes > 0)
+            var client = pool.GetObject();
+            try
             {
-                var client = pool.GetObject();
+                res = client.Reqvest<T>(msg, serviceSettings);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                string theadName = Thread.CurrentThread.Name;
                 try
                 {
-                    res = client.Reqvest<T>(msg);
+                    client.StopClient();
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Console.WriteLine(e.Message);
-                    string theadName = Thread.CurrentThread.Name;
-                    try
-                    {
-                        client?.StopClient();
-                    }
-                    catch (Exception ex)
-                    {
-                        log.LogError($"В потока { theadName } при выключении сокета произошла ошибка socet {client?.Name}", ex);
-                    }
-                    client = new AscClient(client?.Name, config.IpAdress, config.Port, config.ServicesUpdateTimeMs, log);
+                    log.LogError($"В потока { theadName } при выключении сокета произошла ошибка socet", ex);
                 }
-                pool.PutObject(client);
-                if (IsResEmpty(res))
-                    Thread.Sleep(config.DelayMsTries);
-                tryes--;
+                client = new AscClient(config, log);
             }
+            pool.PutObject(client);
             if (res == null)
                 throw new Exception("Не получилось получить данные");
-
             return res;
         } 
 

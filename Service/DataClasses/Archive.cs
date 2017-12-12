@@ -7,7 +7,7 @@ namespace Service.DataClasses
 {
     public class Archive
     {
-        public double Size { get; set; }
-        public double Load { get; set; }
+        public double? Size { get; set; }
+        public double? Load { get; set; }
     }
 }

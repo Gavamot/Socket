@@ -7,10 +7,10 @@ namespace Service.DataClasses
 {
     public class Device
     {
-        public ushort Model { get; set; }
-        public ushort Number  { get; set; }
-        public ushort Release { get; set; }
-        public ushort Serial { get; set; }
+        public ushort? Model { get; set; }
+        public ushort? Number  { get; set; }
+        public ushort? Release { get; set; }
+        public ushort? Serial { get; set; }
         public string Version { get; set; }
         public string Type { get; set; }
     }

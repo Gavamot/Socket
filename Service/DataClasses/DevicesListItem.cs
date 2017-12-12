@@ -11,5 +11,6 @@ namespace Service.DataClasses
         public Position Position { get; set; }
         public Archive Archive { get; set; }
         public Info Info { get; set; }
+        public List<Channel> Channels { get; set; }
     }
 }

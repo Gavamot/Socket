@@ -6,7 +6,7 @@ namespace Service.Core
 {
     public enum EASCMessage
     {
-#region old
+        #region old
         ///// <summary>
         ///// неизвестное сообщение
         ///// </summary>
@@ -183,7 +183,9 @@ namespace Service.Core
         ///// <summary>
         /////  сообщение - инициирована загрузка данных ( Клиент --> Сервер )
         ///// </summary>
-        //eLoadDataInitMessage = 43,                     
+        //eLoadData
+
+        Message = 43,                     
         ///// <summary>
         ///// сообщение - загрузить данные ( Клиент --> Сервер )
         ///// </summary>                                           
