@@ -25,7 +25,6 @@ namespace Service.Controllers
             this.logger = logger;
         }
 
-
         [Route("[controller]/All")]
         public ResponseMessage<DevicesListItem[]> All()
         {
@@ -33,15 +32,13 @@ namespace Service.Controllers
             return res;
         }
 
-
-        [Route("[controller]/GetByCode")] 
+        [Route("[controller]/GetByCode")]
         public ResponseMessage<DevicesListItem> GetByCode(string code)
         {
             var res = ds.GetByBrigadeCode(code);
             return res;
         }
 
-        [HttpPost]
         [Route("[controller]/GetByCodeList")]
         public ResponseMessage<DevicesListItem[]> GetByCodeList(string[] codes)
         {

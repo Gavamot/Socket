@@ -29,7 +29,7 @@ namespace Service.Core
         public const int MAX_CONFIRM_PACK_SIZE = 20;
 
 
-        public static List<byte> GetConfirmationPackBytes(uint b)
+        public static byte[] GetConfirmationPackBytes(uint b)
         {
             var res = new List<byte> { 0x00, 0x01 };
             res.AddRange(BitConverter.GetBytes(b).Reverse());
@@ -38,7 +38,7 @@ namespace Service.Core
             res = FowardChangeBytes(res);
             res.Insert(0, START);
             res.Add(END);
-            return res;
+            return res.ToArray();
         }
 
         public static int IndexOfConfirmationPack(byte[] data, int bytesRead)
@@ -46,36 +46,14 @@ namespace Service.Core
             return data.IndexOf(START) ;
         }
 
-        /// <summary>
-        /// Выделяет 2-ой пакет из массива байтов
-        /// </summary>
-        /// <param name="data">массив байтов</param>
-        /// <returns>2-ой пакет</returns>
         private static byte[] DeleteExcessBytes(byte[] data)
         {
-            int start = data.IndexOf(START); // Начало первого пакета
-            int end = data.IndexOf(END) + 1; // Конец первого пакета
-            int ln = end - start; // Длина первого пакета
-
-            int startP = -1, endP = -1;
-            for (int i = end; i < data.Length; i++)
-            {
-                if (Packet.START == data[i])
-                {
-                    startP = i;
-                    endP = -1;
-                }
-                else if (startP != -1 && Packet.END == data[i])
-                {
-                    endP = i;
-                    break;
-                }
-            }
-
-            ln = endP - startP + 1;
-            byte[] result = new byte[ln];
-            Array.Copy(data, startP, result, 0, ln);
-            return result;
+            int start = data.IndexOf(START);
+            int end = data.IndexOf(END);
+            int ln = end - start + 1;
+            byte[] res = new byte[ln];
+            Array.Copy(data, start, res, 0, ln);
+            return res;
         }
 
       
@@ -156,33 +134,33 @@ namespace Service.Core
             return res.ToArray();
         }
 
-        /// <summary>
-        /// Делит полученные данные на пакеты
-        /// </summary>
-        /// <param name="data">Полученные данные</param>
-        /// <returns>Пакеты</returns>
-        public static List<List<byte>> SplitToPackets(List<byte> data)
-        {
-            var res = new List<List<byte>>();
-            int startIndex = -1;
-            for (int i = 0, max = data.Count; i < max; i++)
-            {
-                var b = data[i];
-                if (b == START) startIndex = i;
-                else if (startIndex != -1 && b == END)
-                {
-                    int counts = i + 1 - startIndex; 
-                    if (counts >= CONFIRM_PACK_SIZE)
-                        res.Add(data.GetRange(startIndex, i + 1 - startIndex));
-                    startIndex = -1;
-                } 
-            }
-            return res;
-        }
+        ///// <summary>
+        ///// Делит полученные данные на пакеты
+        ///// </summary>
+        ///// <param name="data">Полученные данные</param>
+        ///// <returns>Пакеты</returns>
+        //public static List<List<byte>> SplitToPackets(List<byte> data)
+        //{
+        //    var res = new List<List<byte>>();
+        //    int startIndex = -1;
+        //    for (int i = 0, max = data.Count; i < max; i++)
+        //    {
+        //        var b = data[i];
+        //        if (b == START) startIndex = i;
+        //        else if (startIndex != -1 && b == END)
+        //        {
+        //            int counts = i + 1 - startIndex; 
+        //            if (counts >= CONFIRM_PACK_SIZE)
+        //                res.Add(data.GetRange(startIndex, i + 1 - startIndex));
+        //            startIndex = -1;
+        //        } 
+        //    }
+        //    return res;
+        //}
 
-        public static string ParceReceivedPacket(byte[] data)
+        public static string ParceReceivedPacket(List<byte> data)
         {
-            var pac = DeleteExcessBytes(data);
+            var pac = DeleteExcessBytes(data.ToArray());
             var packet = BackChangeBytes(pac.ToList());
             if (!Crc.IsEqualCheckSum(packet))
                 throw new PacketParceException("crc eror");

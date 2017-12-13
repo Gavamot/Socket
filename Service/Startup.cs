@@ -32,9 +32,9 @@ namespace Service
 
             var config = Configuration.GetSection(ConfigSection).Get<Config>().AscConfig;
             var logFactory = Configuration.Get<LoggerFactory>();
+            logFactory.AddFile("Logs/mylog-{Date}.txt");
 
             AscPool.Init(config.Connect, config.ConnectionPoolSize, logFactory.CreateLogger("PollSize"));
-
             Ds = new DeviceService(config.DeviceService, logFactory.CreateLogger("DeviceService"));
             Ds.Start();
 
@@ -53,7 +53,7 @@ namespace Service
 
             app.UseMvc();
 
-            loggerFactory.AddFile("Logs/mylog-{Date}.txt");
+            
         }
     }
 }

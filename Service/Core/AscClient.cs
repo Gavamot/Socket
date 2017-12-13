@@ -1,43 +1,20 @@
-using System;
+п»їusing System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Remoting.Channels;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using Service.Configuration;
 
 namespace Service.Core
 {
-
-#region AscExceptions
-    public class AscClientBaseException : Exception {
-        public AscClientBaseException(string message) : base(message) { }
-        public AscClientBaseException(string message, Exception innerException) : base(message, innerException) { }
-    } 
-
-    public class AscConnectionException : AscClientBaseException
-    {
-        public AscConnectionException(string message) : base(message) { }
-        public AscConnectionException(string message, Exception innerException) : base(message, innerException) { }
-    }
-
-    public class AscSendException : AscClientBaseException
-    {
-        public AscSendException(string message) : base(message) { }
-        public AscSendException(string message, Exception innerException) : base(message, innerException) { }
-    }
-
-    public class AscResponseException : AscClientBaseException
-    {
-        public AscResponseException(string message) : base(message) { }
-        public AscResponseException(string message, Exception innerException) : base(message, innerException) { }
-    }
-#endregion
 
     public class AscClient// : IDisposable
     {
@@ -47,11 +24,12 @@ namespace Service.Core
             {
                 BufferSize = bufferSize;
                 Buffer = new byte[bufferSize];
+                Result = new List<byte>();
             }
 
             public Socket WorkSocket { get; set; }
             public int BufferSize { get; set; }
-            public bool IsConfirmReceived { get; set; }
+            public List<byte> Result { get; set; }
             public byte[] Buffer { get; set; }
         }
 
@@ -65,9 +43,9 @@ namespace Service.Core
         private ManualResetEvent receiveDone = new ManualResetEvent(false);
 
         //private List<byte> response { get; set; }
+
         public Socket socket { get; set; }
         //private List<byte> autorizeReceived { get; set; }
-        private byte[] responce;
 
         public bool IsStarted => socket.Connected;
         //private readonly ServiceConfig config;
@@ -91,16 +69,17 @@ namespace Service.Core
             try
             {
                 reqestId = 1;
+
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                socket.NoDelay = true; // Отправлять сообщение на сервер немедленно. Не накапливая их в буфер.
+                socket.NoDelay = true; // РћС‚РїСЂР°РІР»СЏС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ РЅР° СЃРµСЂРІРµСЂ РЅРµРјРµРґР»РµРЅРЅРѕ. РќРµ РЅР°РєР°РїР»РёРІР°СЏ РёС… РІ Р±СѓС„РµСЂ.
                 socket.BeginConnect(endPoint, ConnectCallback, socket);
                 if (!connectDone.WaitOne(this.timeoutConnectMs))
-                    throw new AscConnectionException("Не удалось установить соединение с сервером таймаут превышен");
+                    throw new AscConnectionException("РќРµ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ СЃ СЃРµСЂРІРµСЂРѕРј С‚Р°Р№РјР°СѓС‚ РїСЂРµРІС‹С€РµРЅ");
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                string m = $"Не удалось установить соединение";
+                string m = $"РќРµ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ";
                 log.LogError(m);
                 return false;
             }
@@ -124,65 +103,84 @@ namespace Service.Core
             }
         }
 
-        /// <summary>
-        /// Получает данные от ASC сервера
-        /// </summary>
-        /// <typeparam name="T">Тип возвращаемых данных</typeparam>
-        /// <param name="message">Сообщение для сервера</param>
-        /// <returns>вернет null в случаи ошибки иначе обьет типа Т</returns>
-        public T Reqvest<T>(Message message, ServiceConfig conf)
+        private void SendAndWait(byte[] data)
         {
-            this.config = conf;
-            responce = new byte[config.BufferSizeBytes];
+            Send(socket, data);
+            if (!sendDone.WaitOne(config.TimeoutSendMs))
+                throw new AscSendException("TimeoutSendMs");
+            sendDone.Reset();
+        }
 
-            if (socket == null)
-                StartClient();
+        private List<byte> ReciveAndWait(int countBytes = 0)
+        {
+            Receive(socket, countBytes);
+            if (!receiveDone.WaitOne(config.TimeoutRequestMs))
+                throw new AscSendException("TimeoutRequestMs");
+            receiveDone.Reset();
+            return state.Result.ToList();
+        }
 
-            if (socket == null)
-                throw new AscConnectionException("Не удалось установить соединение с сервером");
 
-            if (!socket.Connected)
-                throw new AscConnectionException("Соединение с сервером отсутствует");
-
-            // Формируем сообщение для отправки
+        private byte[] CreateByteArrayByMessage(Message message)
+        {
             var msg = new Message[] { message };
             var msgJson = JsonConvert.SerializeObject(msg);
-            var data = Packet.MakeSendPacket(msgJson, reqestId);
+            byte[] res = Packet.MakeSendPacket(msgJson, reqestId);
+            return res;
+        }
 
-            // Отправляем сообщение
-            Send(socket, data);
-            // Дожидаемся завершения отправки
-            if (!sendDone.WaitOne(config.TimeoutSendMs))
-                throw new AscSendException("Превышен интервал завершения отправки данных");
+        /// <summary>
+        /// РЈСЃС‚Р°РЅРѕРІРєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё Рё РїСЂРѕРІРµСЂРєРё. 
+        /// </summary>
+        /// <param name="conf"></param>
+        private void InitReqvest(ServiceConfig conf)
+        {
+            this.config = conf;
+            if (socket == null) StartClient();
+            if (socket == null) throw new AscConnectionException("socket == null");
+            if (!socket.Connected) throw new AscConnectionException("!socket.Connected");
             sendDone.Reset();
-
-            // Ждем пока придет 2 пакета
-            Thread.Sleep(conf.ResivedTimeMs);
-
-            Receive(socket);
-            if (!receiveDone.WaitOne(config.TimeoutRequestMs))
-                throw new AscSendException("Превышен интервал получения данных от сервера");
-            
             receiveDone.Reset();
+        }
 
-            // Отправляем подтверждение что получили данные
-            Send(socket, Packet.GetConfirmationPackBytes(reqestId).ToArray());
-            if (!sendDone.WaitOne(config.TimeoutSendMs))
-                throw new AscSendException("Превышен интервал завершения отправки подверждения данных");
-            sendDone.Reset();
 
-            reqestId++; // Двигаем счетчик сообщений
-            
+        /// <summary>
+        /// РџРѕР»СѓС‡Р°РµС‚ РґР°РЅРЅС‹Рµ РѕС‚ ASC СЃРµСЂРІРµСЂР°
+        /// </summary>
+        /// <typeparam name="T">РўРёРї РІРѕР·РІСЂР°С‰Р°РµРјС‹С… РґР°РЅРЅС‹С…</typeparam>
+        /// <param name="message">РЎРѕРѕР±С‰РµРЅРёРµ РґР»СЏ СЃРµСЂРІРµСЂР°</param>
+        /// <returns>РІРµСЂРЅРµС‚ null РІ СЃР»СѓС‡Р°Рё РѕС€РёР±РєРё РёРЅР°С‡Рµ РѕР±СЊРµС‚ С‚РёРїР° Рў</returns>
+        public T Reqvest<T>(Message message, ServiceConfig conf)
+        {
+            InitReqvest(conf);
+
+            // Р¤РѕСЂРјРёСЂСѓРµРј Р·Р°РїСЂРѕСЃ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґР°РЅРЅС‹С… СЃ СЃРµСЂРІРµСЂР°
+            byte[] data = CreateByteArrayByMessage(message);
+            // РћС‚РїСЂР°РІР»СЏРµРј Р·Р°РїСЂРѕСЃ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґР°РЅРЅС‹С… СЃ СЃРµСЂРІРµСЂР°
+            SendAndWait(data);
+
+            // РџРѕР»СѓС‡Р°РµРј РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ
+            List<byte> responce1 = ReciveAndWait(24);
+            List<byte> responce2 = ReciveAndWait();
+            //List<byte> responce = responce1.Concat(responce2).ToList();
+
+            //log.LogError(BitConverter.ToString(responce.ToArray()));
+
+            SendAndWait(Packet.GetConfirmationPackBytes(reqestId));
+            reqestId++;
+
+            //log.LogError(BitConverter.ToString(responce));
+
             string packet;
             try
             {
-                packet = Packet.ParceReceivedPacket(responce);
+                packet = Packet.ParceReceivedPacket(responce2);
             }
             catch (Exception e)
             {
                 log.LogError(e, e.Message);
-                log.LogError(BitConverter.ToString(responce));
-                Console.WriteLine($"!!!!!!!!!!!!!!!!!! {e.Message}");
+                log.LogError(BitConverter.ToString(responce2.ToArray()));
+                Console.WriteLine($"!!!!!!!!!!!!!!!!!!1 {e.Message}");
                 return default(T);
             }
 
@@ -200,7 +198,7 @@ namespace Service.Core
                 client.EndConnect(ar);
                 connectDone.Set();
                 if (!connectDone.Set())
-                    throw new Exception("Не удалось установить соединение с сервером");
+                    throw new Exception("РќРµ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ СЃ СЃРµСЂРІРµСЂРѕРј");
             }
             catch (Exception e)
             {
@@ -209,18 +207,19 @@ namespace Service.Core
             }
         }
 
-        private void Receive(Socket client)
+        private void Receive(Socket client, int readBybesCount)
         {
+            if (readBybesCount == 0)
+                readBybesCount = config.BufferSizeBytes;
             try
             {
-                StateObject state = new StateObject(config.BufferSizeBytes);
+                state = new StateObject(config.BufferSizeBytes);
                 state.WorkSocket = client;
-                client.BeginReceive(state.Buffer, 0, config.BufferSizeBytes, 0, ReceiveCallback, state);
-
+                client.BeginReceive(state.Buffer, 0, readBybesCount, 0, ReceiveCallback, state);
             }catch(Exception e)
             {
-                Console.WriteLine($"!!Receive!! - reqestId={reqestId}   ошибка {e.Message}");
-                log.LogError($"!!Receive!! - reqestId={reqestId}   ошибка {e.Message}", e);
+                Console.WriteLine($"!!Receive!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}");
+                log.LogError($"!!Receive!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}", e);
             }
            
         }
@@ -229,28 +228,42 @@ namespace Service.Core
         {
             try
             {
-                StateObject state = (StateObject) ar.AsyncState;
-                Socket socket = state.WorkSocket;
-                int bytesRead = socket.EndReceive(ar);
-                responce = state.Buffer;
-                receiveDone.Set();
-                //// Проверка сокета на наличие данных
+                state = (StateObject) ar.AsyncState;
+                //Socket socket = state.WorkSocket;
                 //int bytesRead = socket.EndReceive(ar);
-                //if (bytesRead > 0 && bytesRead == StateObject.BufferSize)
-                //{
-                //    //response.AddRange(state.buffer);
-                //    socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
-                //}
-                //else
-                //{
-                //    //response.AddRange(state.buffer);
-                //    receiveDone.Set();
-                //}
+                //responce = state.Buffer;
+                //receiveDone.Set();
+                //// РџСЂРѕРІРµСЂРєР° СЃРѕРєРµС‚Р° РЅР° РЅР°Р»РёС‡РёРµ РґР°РЅРЅС‹С…
+                int bytesRead = socket.EndReceive(ar);
+                if (bytesRead > 0 && bytesRead == config.BufferSizeBytes)
+                {
+                    state.Result.AddRange(state.Buffer);
+                    state.Buffer = new byte[config.BufferSizeBytes];
+                    if (!state.Buffer.Contains(Packet.END)) 
+                        socket.BeginReceive(state.Buffer, 0, config.BufferSizeBytes, 0, ReceiveCallback, state);
+                }
+                else
+                {
+                    if (bytesRead == 0)
+                    {
+                        socket.BeginReceive(state.Buffer, 0, config.BufferSizeBytes, 0, ReceiveCallback, state);
+                        return;
+                    }
+                    int endIndex = state.Buffer.IndexOf(Packet.END);
+                    byte[] res = new byte[bytesRead];
+                    Array.Copy(state.Buffer, res, bytesRead);
+                    state.Result.AddRange(res);
+                    if (endIndex == -1)
+                        socket.BeginReceive(state.Buffer, 0, config.BufferSizeBytes, 0, ReceiveCallback, state);
+                    else
+                        receiveDone.Set();
+
+                }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"!!ReceiveCallback!! - reqestId={reqestId}   ошибка {e.Message}");
-                log.LogError($"!!ReceiveCallback!! - reqestId={reqestId}   ошибка {e.Message}", e);
+                Console.WriteLine($"!!ReceiveCallback!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}");
+                log.LogError($"!!ReceiveCallback!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}", e);
             }
         }
 
@@ -262,8 +275,8 @@ namespace Service.Core
             }
             catch(Exception e)
             {
-                Console.WriteLine($"!!Send!! - reqestId={reqestId}   ошибка {e.Message}");
-                log.LogError($"!!Send!! - reqestId={reqestId}   ошибка {e.Message}", e);
+                Console.WriteLine($"!!Send!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}");
+                log.LogError($"!!Send!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}", e);
             }
         }
 
@@ -277,57 +290,85 @@ namespace Service.Core
             }
             catch (Exception e)
             {
-                Console.WriteLine($"!!SendCallback!! - reqestId={reqestId}   ошибка {e.Message}");
-                log.LogError($"!!SendCallback!! - reqestId={reqestId}   ошибка {e.Message}", e);
+                Console.WriteLine($"!!SendCallback!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}");
+                log.LogError($"!!SendCallback!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}", e);
             }
         }
+        
+        //private void ReceiveConfirm(Socket client)
+        //{
+        //    try
+        //    {
+        //        StateObject state = new StateObject(config.BufferSizeBytes);
+        //        state.WorkSocket = client;
+        //        client.BeginReceive(state.Buffer, 0, Packet.MAX_CONFIRM_PACK_SIZE, 0, ReceivePacketCallback, state);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Console.WriteLine($"!!Receive!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}");
+        //        log.LogError($"!!Receive!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}", e);
 
-        #region Old
+        //    }
+        //}
 
-        private void ReceiveConfirm(Socket client)
-        {
-            try
-            {
-                StateObject state = new StateObject(config.BufferSizeBytes);
-                state.WorkSocket = client;
-                client.BeginReceive(state.Buffer, 0, Packet.MAX_CONFIRM_PACK_SIZE, 0, ReceivePacketCallback, state);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"!!Receive!! - reqestId={reqestId}   ошибка {e.Message}");
-                log.LogError($"!!Receive!! - reqestId={reqestId}   ошибка {e.Message}", e);
-            }
-        }
+        //private void ReceivePacketCallback(IAsyncResult ar)
+        //{
+        //    try
+        //    {
+        //        StateObject state = (StateObject)ar.AsyncState;
+        //        Socket socket = state.WorkSocket;
+        //        int bytesRead = socket.EndReceive(ar);
+        //        //Array.Copy(state.Buffer, responce, config.BufferSizeBytes);
 
-        private void ReceivePacketCallback(IAsyncResult ar)
-        {
-            try
-            {
-                StateObject state = (StateObject)ar.AsyncState;
-                Socket socket = state.WorkSocket;
-                int bytesRead = socket.EndReceive(ar);
-                Array.Copy(state.Buffer, responce, config.BufferSizeBytes);
-                receiveDone.Set();
-                //// Проверка сокета на наличие данных
-                //int bytesRead = socket.EndReceive(ar);
-                //if (bytesRead > 0)
-                //{
-                //    response.AddRange(state.buffer);
-                //    socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
-                //}
-                //else
-                //{
-                //    response.AddRange(state.buffer);
-                //    receiveDone.Set();
-                //}
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"!!ReceiveCallback!! - reqestId={reqestId}   ошибка {e.Message}");
-                log.LogError($"!!ReceiveCallback!! - reqestId={reqestId}   ошибка {e.Message}", e);
-            }
-        }
+        //        receiveDone.Set();
+        //        //// РџСЂРѕРІРµСЂРєР° СЃРѕРєРµС‚Р° РЅР° РЅР°Р»РёС‡РёРµ РґР°РЅРЅС‹С…
+        //        //int bytesRead = socket.EndReceive(ar);
+        //        //if (bytesRead > 0)
+        //        //{
+        //        //    response.AddRange(state.buffer);
+        //        //    socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ReceiveCallback, state);
+        //        //}
+        //        //else
+        //        //{
+        //        //    response.AddRange(state.buffer);
+        //        //    receiveDone.Set();
+        //        //}
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Console.WriteLine($"!!ReceiveCallback!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}");
+        //        log.LogError($"!!ReceiveCallback!! - reqestId={reqestId}   РѕС€РёР±РєР° {e.Message}", e);
 
-        #endregion
+        //    }
+        //}
+
+
     }
+
+    #region AscExceptions
+    public class AscClientBaseException : Exception
+    {
+        public AscClientBaseException(string message) : base(message) { }
+        public AscClientBaseException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
+    public class AscConnectionException : AscClientBaseException
+    {
+        public AscConnectionException(string message) : base(message) { }
+        public AscConnectionException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
+    public class AscSendException : AscClientBaseException
+    {
+        public AscSendException(string message) : base(message) { }
+        public AscSendException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
+    public class AscResponseException : AscClientBaseException
+    {
+        public AscResponseException(string message) : base(message) { }
+        public AscResponseException(string message, Exception innerException) : base(message, innerException) { }
+    }
+    #endregion
+
 }
